@@ -248,6 +248,8 @@
     "users": "Users",
     "totalOrgs": "Total organizations",
     "totalUsers": "Total users",
-    "activeWebinars": "Active webinars"
+    "activeWebinars": "Active webinars",
+    "overview": "Overview",
+    "emptyTable": "No records found"
   }
 }
