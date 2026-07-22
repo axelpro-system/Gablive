@@ -5,7 +5,7 @@ import { supabase } from '../../lib/supabase';
 import { useChat, useSimulatedChat } from '../../hooks/useChat';
 import { useTrackEvent } from '../../hooks/useAnalytics';
 import { useCountdown } from '../../hooks/useCountdown';
-import { WEBINAR_STATUS, WEBINAR_TYPE, ANALYTICS_EVENTS } from '../../lib/constants';
+import { WEBINAR_STATUS, WEBINAR_TYPE, ANALYTICS_EVENTS, WATCH_MILESTONES, AUDIENCE_MODE } from '../../lib/constants';
 import { useSeo } from '../../hooks/useSeo';
 import { sanitizeInput } from '../../lib/sanitize';
 import {
@@ -40,10 +40,16 @@ export default function WebinarRoomPage() {
   const [dismissedCtas, setDismissedCtas] = useState(new Set());
   const [isMuted, setIsMuted] = useState(true);
   const [activeMobileTab, setActiveMobileTab] = useState('chat');
+  const [visibleSaleToasts, setVisibleSaleToasts] = useState([]);
+  const [audienceCount, setAudienceCount] = useState(0);
 
   const chatEndRef = useRef(null);
   const videoIntervalRef = useRef(null);
   const iframeRef = useRef(null);
+  const firedMilestonesRef = useRef(new Set());
+  const firedPitchRef = useRef(false);
+  const firedOfferRef = useRef(new Set());
+  const firedSalesRef = useRef(new Set());
 
   const handleUnmute = () => {
     setIsMuted(false);
@@ -76,13 +82,23 @@ export default function WebinarRoomPage() {
           *,
           simulated_messages(*, order: sort_order),
           cta_configs(*, order: sort_order),
-          polls(*, poll_responses(*))
+          polls(*, poll_responses(*)),
+          sales_notifications(*, order: show_at_seconds),
+          audience_configs(*)
         `)
-        .eq('id', slug)
+        .eq('slug', slug)
         .single();
 
       if (data) {
         setWebinar(data);
+
+        const audience = data.audience_configs;
+        if (audience?.mode === AUDIENCE_MODE.FIXED) {
+          setAudienceCount(audience.fixed_count);
+        } else if (audience?.mode === AUDIENCE_MODE.DYNAMIC) {
+          const { dynamic_min: min, dynamic_max: max } = audience;
+          setAudienceCount(Math.floor(Math.random() * (max - min + 1)) + min);
+        }
 
         // Check registration from localStorage
         const regId = localStorage.getItem(`webinar-reg-${data.id}`);
@@ -103,6 +119,7 @@ export default function WebinarRoomPage() {
                 .eq('id', regId);
             }
             trackEvent(data.id, regId, ANALYTICS_EVENTS.JOIN);
+            trackEvent(data.id, regId, ANALYTICS_EVENTS.WEBINAR_ENTERED);
           }
         }
       }
@@ -154,6 +171,60 @@ export default function WebinarRoomPage() {
     };
   }, []);
 
+  // Audiência dinâmica: leve flutuação dentro do intervalo configurado
+  useEffect(() => {
+    const audience = webinar?.audience_configs;
+    if (audience?.mode !== AUDIENCE_MODE.DYNAMIC) return;
+
+    const interval = setInterval(() => {
+      setAudienceCount((prev) => {
+        const delta = Math.floor(Math.random() * 5) - 2;
+        return Math.min(audience.dynamic_max, Math.max(audience.dynamic_min, prev + delta));
+      });
+    }, 8000);
+
+    return () => clearInterval(interval);
+  }, [webinar]);
+
+  // Marcos de assistência (15/30/45/60 min) do funil canônico
+  useEffect(() => {
+    if (!webinar || !registration) return;
+    WATCH_MILESTONES.forEach(({ seconds, event }) => {
+      if (videoTime >= seconds && !firedMilestonesRef.current.has(event)) {
+        firedMilestonesRef.current.add(event);
+        trackEvent(webinar.id, registration.id, event, { seconds: videoTime });
+      }
+    });
+  }, [videoTime, webinar, registration, trackEvent]);
+
+  // Pitch reached (início do pitch configurado na oferta)
+  useEffect(() => {
+    if (!webinar?.cta_configs || !registration || firedPitchRef.current) return;
+    const pitchStarts = webinar.cta_configs
+      .map((c) => c.pitch_start_seconds)
+      .filter((s) => s != null && s >= 0);
+    if (pitchStarts.length === 0) return;
+    const earliestPitch = Math.min(...pitchStarts);
+    if (videoTime >= earliestPitch) {
+      firedPitchRef.current = true;
+      trackEvent(webinar.id, registration.id, ANALYTICS_EVENTS.PITCH_REACHED, { seconds: videoTime });
+    }
+  }, [videoTime, webinar, registration, trackEvent]);
+
+  // Notificações de venda (prova social) — toasts temporários no timeline
+  useEffect(() => {
+    const sales = webinar?.sales_notifications || [];
+    sales.forEach((sale) => {
+      if (videoTime >= sale.show_at_seconds && !firedSalesRef.current.has(sale.id)) {
+        firedSalesRef.current.add(sale.id);
+        setVisibleSaleToasts((prev) => [...prev, sale]);
+        setTimeout(() => {
+          setVisibleSaleToasts((prev) => prev.filter((s) => s.id !== sale.id));
+        }, 6000);
+      }
+    });
+  }, [videoTime, webinar]);
+
   // Track progress every 30 seconds
   useEffect(() => {
     if (videoTime > 0 && videoTime % 30 === 0 && webinar && registration) {
@@ -176,7 +247,16 @@ export default function WebinarRoomPage() {
 
     setActiveCtas(visible);
     setShowCtaBanner(visible.length > 0);
-  }, [videoTime, webinar, dismissedCtas]);
+
+    if (registration) {
+      visible.forEach((cta) => {
+        if (!firedOfferRef.current.has(cta.id)) {
+          firedOfferRef.current.add(cta.id);
+          trackEvent(webinar.id, registration.id, ANALYTICS_EVENTS.OFFER_SHOWN, { cta_id: cta.id });
+        }
+      });
+    }
+  }, [videoTime, webinar, dismissedCtas, registration, trackEvent]);
 
   // Check polls based on video time
   useEffect(() => {
@@ -301,10 +381,12 @@ export default function WebinarRoomPage() {
           )}
         </div>
         <div className="room-header-right">
-          <span className="room-viewers">
-            <Users size={14} />
-            {t('room.watching', { count: Math.floor(Math.random() * 50) + 10 })}
-          </span>
+          {webinar.audience_configs?.mode !== 'none' && (
+            <span className="room-viewers">
+              <Users size={14} />
+              {t('room.watching', { count: audienceCount })}
+            </span>
+          )}
         </div>
       </header>
 
@@ -378,11 +460,22 @@ export default function WebinarRoomPage() {
                   >
                     <X size={16} />
                   </button>
+                  {cta.banner_desktop_url && (
+                    <img src={cta.banner_desktop_url} alt={cta.title} className="room-cta-banner-img" />
+                  )}
                   <div className="room-cta-content">
                     <div className="room-cta-info">
                       <h3 className="room-cta-title">{cta.title}</h3>
                       {cta.description && (
                         <p className="room-cta-description">{cta.description}</p>
+                      )}
+                      {cta.sale_price != null && (
+                        <p className="room-cta-price">
+                          {cta.original_price != null && (
+                            <s className="room-cta-price-original">R$ {Number(cta.original_price).toFixed(2)}</s>
+                          )}
+                          <span className="room-cta-price-sale">R$ {Number(cta.sale_price).toFixed(2)}</span>
+                        </p>
                       )}
                     </div>
                     <button
@@ -395,6 +488,16 @@ export default function WebinarRoomPage() {
                   </div>
                 </div>
               ))}
+
+              {/* Toasts de prova social (vendas) */}
+              <div className="room-sales-toasts">
+                {visibleSaleToasts.map((sale) => (
+                  <div key={sale.id} className="room-sale-toast">
+                    <strong>{sale.buyer_name}{sale.buyer_location ? ` (${sale.buyer_location})` : ''}</strong>
+                    <span>acabou de comprar {sale.product_name}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>

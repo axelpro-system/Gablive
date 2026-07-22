@@ -41,8 +41,8 @@ export default function WebinarsListPage() {
     refetch();
   };
 
-  const copyRegistrationLink = (id) => {
-    const url = `${window.location.origin}/register/${id}`;
+  const copyRegistrationLink = (slug) => {
+    const url = `${window.location.origin}/register/${slug}`;
     navigator.clipboard.writeText(url);
     setOpenMenu(null);
   };
@@ -77,7 +77,7 @@ export default function WebinarsListPage() {
             {webinars.length} webinár{webinars.length !== 1 ? 'ios' : 'io'}
           </p>
         </div>
-        <Link to="/webinars/create" className="btn btn-primary">
+        <Link to="/webinars/create" className="btn btn-create">
           <Plus size={18} />
           {t('webinar.createWebinar')}
         </Link>
@@ -89,7 +89,7 @@ export default function WebinarsListPage() {
             <Video size={48} className="empty-state-icon" />
             <p className="empty-state-title">{t('dashboard.noWebinarsYet')}</p>
             <p className="empty-state-description">{t('dashboard.createFirst')}</p>
-            <Link to="/webinars/create" className="btn btn-primary">
+            <Link to="/webinars/create" className="btn btn-create">
               <Plus size={18} />
               {t('webinar.createWebinar')}
             </Link>
@@ -109,6 +109,9 @@ export default function WebinarsListPage() {
                       <span className={`badge ${status.class} badge-dot`}>
                         {StatusIcon && <StatusIcon size={10} />}
                         {t(`webinar.status${webinar.status.charAt(0).toUpperCase() + webinar.status.slice(1)}`)}
+                      </span>
+                      <span className={`badge ${webinar.is_just_in_time ? 'badge-dark' : 'badge-brand'}`}>
+                        {webinar.is_just_in_time ? 'Just In Time' : 'Único'}
                       </span>
                       <span className="badge badge-gray">
                         {webinar.type === WEBINAR_TYPE.LIVE
@@ -136,13 +139,13 @@ export default function WebinarsListPage() {
                           </Link>
                           <button
                             className="dropdown-item"
-                            onClick={() => copyRegistrationLink(webinar.id)}
+                            onClick={() => copyRegistrationLink(webinar.slug)}
                           >
                             <Copy size={16} />
                             {t('webinar.copyLink')}
                           </button>
                           <Link
-                            to={`/register/${webinar.id}`}
+                            to={`/register/${webinar.slug}`}
                             target="_blank"
                             className="dropdown-item"
                             onClick={() => setOpenMenu(null)}

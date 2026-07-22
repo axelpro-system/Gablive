@@ -103,7 +103,7 @@ export default function LoginPage() {
 
             <button
               type="submit"
-              className="btn btn-primary btn-lg auth-submit"
+              className="btn btn-black btn-lg auth-submit"
               disabled={loading}
             >
               {loading ? (

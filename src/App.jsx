@@ -16,9 +16,13 @@ const EditWebinarPage = lazy(() => import('./pages/dashboard/EditWebinarPage'));
 const AdminDashboardPage = lazy(() => import('./pages/dashboard/AdminDashboardPage'));
 const GlobalAnalyticsPage = lazy(() => import('./pages/dashboard/GlobalAnalyticsPage'));
 const SettingsPage = lazy(() => import('./pages/dashboard/SettingsPage'));
+const AuditLogPage = lazy(() => import('./pages/dashboard/AuditLogPage'));
+const UsersPage = lazy(() => import('./pages/dashboard/UsersPage'));
+const PageTemplatesEditor = lazy(() => import('./components/editor/PageTemplatesEditor'));
 
 // Lazy loaded Public pages
 const RegistrationPage = lazy(() => import('./pages/public/RegistrationPage'));
+const WaitRoomPage = lazy(() => import('./pages/public/WaitRoomPage'));
 const WebinarRoomPage = lazy(() => import('./pages/public/WebinarRoomPage'));
 const ReplayPage = lazy(() => import('./pages/public/ReplayPage'));
 
@@ -72,6 +76,7 @@ export default function App() {
           {/* Public webinar pages (no auth needed) */}
           <Route element={<PublicLayout />}>
             <Route path="/register/:slug" element={<RegistrationPage />} />
+            <Route path="/wait/:slug" element={<WaitRoomPage />} />
             <Route path="/room/:slug" element={<WebinarRoomPage />} />
             <Route path="/replay/:slug" element={<ReplayPage />} />
           </Route>
@@ -109,6 +114,9 @@ export default function App() {
             <Route path="/analytics" element={<GlobalAnalyticsPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/admin" element={<AdminDashboardPage />} />
+            <Route path="/audit" element={<AuditLogPage />} />
+            <Route path="/users" element={<UsersPage />} />
+            <Route path="/admin/page-templates" element={<PageTemplatesEditor />} />
           </Route>
 
           {/* Redirects */}

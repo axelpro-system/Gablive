@@ -12,6 +12,9 @@ import {
   Globe,
   ChevronDown,
   Shield,
+  ScrollText,
+  Users,
+  FileText,
 } from 'lucide-react';
 import { useState } from 'react';
 import { ROLES } from '../../lib/constants';
@@ -85,16 +88,50 @@ export default function AppLayout() {
           ))}
 
           {isAdmin && (
-            <NavLink
-              to="/admin"
-              className={({ isActive }) =>
-                `sidebar-nav-item ${isActive ? 'active' : ''}`
-              }
-              onClick={() => setSidebarOpen(false)}
-            >
-              <Shield size={20} />
-              <span>{t('admin.title')}</span>
-            </NavLink>
+            <>
+              <div className="sidebar-section-label">Administração</div>
+              <NavLink
+                to="/admin"
+                end
+                className={({ isActive }) =>
+                  `sidebar-nav-item ${isActive ? 'active' : ''}`
+                }
+                onClick={() => setSidebarOpen(false)}
+              >
+                <Shield size={20} />
+                <span>{t('admin.title')}</span>
+              </NavLink>
+              <NavLink
+                to="/users"
+                className={({ isActive }) =>
+                  `sidebar-nav-item ${isActive ? 'active' : ''}`
+                }
+                onClick={() => setSidebarOpen(false)}
+              >
+                <Users size={20} />
+                <span>Usuários</span>
+              </NavLink>
+              <NavLink
+                to="/audit"
+                className={({ isActive }) =>
+                  `sidebar-nav-item ${isActive ? 'active' : ''}`
+                }
+                onClick={() => setSidebarOpen(false)}
+              >
+                <ScrollText size={20} />
+                <span>Auditoria</span>
+              </NavLink>
+              <NavLink
+                to="/admin/page-templates"
+                className={({ isActive }) =>
+                  `sidebar-nav-item ${isActive ? 'active' : ''}`
+                }
+                onClick={() => setSidebarOpen(false)}
+              >
+                <FileText size={20} />
+                <span>Templates</span>
+              </NavLink>
+            </>
           )}
         </nav>
 

@@ -45,17 +45,34 @@ body {
   --color-gray-800: #1d2939;
   --color-gray-900: #101828;
 
-  /* Primary accent — sophisticated indigo */
-  --color-primary-50: #eef4ff;
-  --color-primary-100: #d9e5ff;
-  --color-primary-200: #bcd2ff;
-  --color-primary-300: #8eb5ff;
-  --color-primary-400: #598dff;
-  --color-primary-500: #3366ff;
-  --color-primary-600: #1b44f5;
-  --color-primary-700: #1433e1;
-  --color-primary-800: #172bb6;
-  --color-primary-900: #19298f;
+  /* Primary accent — HotWebinar brand red */
+  --color-primary-50: #fde8e9;
+  --color-primary-100: #fbd0d2;
+  --color-primary-200: #f5a3a6;
+  --color-primary-300: #f07171;
+  --color-primary-400: #ef2b2d;
+  --color-primary-500: #e31c23;
+  --color-primary-600: #c81e1e;
+  --color-primary-700: #b01018;
+  --color-primary-800: #8a0d13;
+  --color-primary-900: #5c0a0e;
+
+  /* Brand tokens (aliases — usar quando o significado for "marca", não "ação primária genérica") */
+  --brand-red: #e31c23;
+  --brand-red-bright: #ef2b2d;
+  --brand-red-soft: #fde8e9;
+  --brand-red-muted: #f5a3a6;
+  --brand-red-deep: #b01018;
+
+  /* Create / positive action (verde escuro — distinto do vermelho de marca) */
+  --color-create-600: #14532d;
+  --color-create-700: #0f3d22;
+
+  /* Badges de tipo de webinário */
+  --badge-jit-bg: #111827;
+  --badge-jit-fg: #ffffff;
+  --badge-unico-bg: #e31c23;
+  --badge-unico-fg: #ffffff;
 
   /* Success */
   --color-success-50: #ecfdf3;
@@ -331,6 +348,40 @@ p {
   background-color: var(--color-error-700);
 }
 
+/* Create / positive action — verde escuro, reservado para "+ Criar novo" */
+.btn-create {
+  background-color: var(--color-create-600);
+  color: var(--color-text-inverse);
+  box-shadow: var(--shadow-xs);
+}
+
+.btn-create:hover {
+  background-color: var(--color-create-700);
+}
+
+/* CTA de login — preto sólido, conforme design system */
+.btn-black {
+  background-color: var(--color-black);
+  color: var(--color-text-inverse);
+  box-shadow: var(--shadow-xs);
+}
+
+.btn-black:hover {
+  background-color: #1f1f1f;
+}
+
+/* Continue (wizard) — outline verde */
+.btn-continue {
+  background-color: transparent;
+  color: var(--color-create-600);
+  border: 1px solid var(--color-create-600);
+}
+
+.btn-continue:hover {
+  background-color: var(--color-create-600);
+  color: var(--color-text-inverse);
+}
+
 /* Button sizes */
 .btn-xs {
   padding: var(--space-1) var(--space-2);
@@ -502,6 +553,17 @@ p {
 .badge-error {
   background-color: var(--color-error-50);
   color: var(--color-error-700);
+}
+
+/* Badges de tipo de webinário (JIT vs Único) */
+.badge-dark {
+  background-color: var(--badge-jit-bg);
+  color: var(--badge-jit-fg);
+}
+
+.badge-brand {
+  background-color: var(--badge-unico-bg);
+  color: var(--badge-unico-fg);
 }
 
 .badge-dot::before {

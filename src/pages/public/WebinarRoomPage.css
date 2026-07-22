@@ -1,3 +1,56 @@
+/* --- Sales proof toasts & offer banner extras --- */
+.room-cta-banner-img {
+  max-width: 100%;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.room-cta-price {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 4px 0;
+}
+
+.room-cta-price-original {
+  opacity: 0.6;
+  font-size: 14px;
+}
+
+.room-cta-price-sale {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--color-success-400, #4ade80);
+}
+
+.room-sales-toasts {
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 20;
+}
+
+.room-sale-toast {
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 13px;
+  animation: room-sale-toast-in 0.3s ease-out;
+  max-width: 260px;
+}
+
+@keyframes room-sale-toast-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 /* --- Webinar Room Page --- */
 .room-page {
   min-height: 100vh;

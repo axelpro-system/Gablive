@@ -5,6 +5,12 @@
   color: var(--reg-text, var(--color-text));
 }
 
+.reg-logo {
+  display: block;
+  max-height: 64px;
+  margin: 24px auto 0;
+}
+
 .reg-loading,
 .reg-error {
   min-height: 100vh;

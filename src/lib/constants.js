@@ -39,6 +39,34 @@ export const ANALYTICS_EVENTS = {
   POLL_RESPONSE: 'poll_response',
   CHAT_MESSAGE: 'chat_message',
   VIDEO_PROGRESS: 'video_progress',
+  // Funil canônico (PRD): marcos de assistência e oferta
+  WEBINAR_ENTERED: 'webinar_entered',
+  WATCH_15: 'watch_15',
+  WATCH_30: 'watch_30',
+  WATCH_45: 'watch_45',
+  WATCH_60: 'watch_60',
+  PITCH_REACHED: 'pitch_reached',
+  OFFER_SHOWN: 'offer_shown',
+};
+
+// Marcos de assistência (minutos -> segundos) usados para disparar WATCH_15/30/45/60
+export const WATCH_MILESTONES = [
+  { seconds: 15 * 60, event: ANALYTICS_EVENTS.WATCH_15 },
+  { seconds: 30 * 60, event: ANALYTICS_EVENTS.WATCH_30 },
+  { seconds: 45 * 60, event: ANALYTICS_EVENTS.WATCH_45 },
+  { seconds: 60 * 60, event: ANALYTICS_EVENTS.WATCH_60 },
+];
+
+export const RECURRENCE_TYPE = {
+  NONE: 'none',
+  DAILY: 'daily',
+  WEEKLY: 'weekly',
+};
+
+export const AUDIENCE_MODE = {
+  NONE: 'none',
+  FIXED: 'fixed',
+  DYNAMIC: 'dynamic',
 };
 
 export const BLOCK_TYPES = {
@@ -67,3 +95,6 @@ export const LOCALES = {
 
 export const DEFAULT_REPLAY_HOURS = 48;
 export const DEFAULT_REMINDER_MINUTES = [1440, 60, 15]; // 24h, 1h, 15min
+
+// Tempo de aquecimento na sala de espera antes de um webinar Just-in-Time começar
+export const WAIT_ROOM_JIT_DELAY_SECONDS = 120;

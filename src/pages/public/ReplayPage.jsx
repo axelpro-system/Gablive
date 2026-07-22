@@ -21,7 +21,7 @@ export default function ReplayPage() {
       const { data } = await supabase
         .from('webinars')
         .select('*')
-        .eq('id', slug)
+        .eq('slug', slug)
         .single();
 
       if (data) {

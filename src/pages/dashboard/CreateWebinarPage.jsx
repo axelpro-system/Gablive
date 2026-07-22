@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useCreateWebinar } from '../../hooks/useWebinar';
-import { WEBINAR_TYPE, VIDEO_PLATFORM, DEFAULT_REPLAY_HOURS } from '../../lib/constants';
-import { ArrowLeft, ArrowRight, Video, Radio, Youtube } from 'lucide-react';
+import { WEBINAR_TYPE, VIDEO_PLATFORM, DEFAULT_REPLAY_HOURS, RECURRENCE_TYPE } from '../../lib/constants';
+import { ArrowLeft, ArrowRight, Video, Radio, Youtube, Infinity as InfinityIcon, CalendarClock } from 'lucide-react';
 import './CreateWebinarPage.css';
 
 export default function CreateWebinarPage() {
@@ -21,6 +21,11 @@ export default function CreateWebinarPage() {
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     replay_enabled: true,
     replay_expires_hours: DEFAULT_REPLAY_HOURS,
+    presenter_name: '',
+    is_just_in_time: false,
+    use_wait_room: false,
+    recurrence_type: RECURRENCE_TYPE.NONE,
+    session_duration_minutes: 60,
   });
 
   const [error, setError] = useState('');
@@ -33,7 +38,7 @@ export default function CreateWebinarPage() {
       const webinar = await createWebinar({
         ...form,
         scheduled_at: form.scheduled_at ? new Date(form.scheduled_at).toISOString() : null,
-        status: form.scheduled_at ? 'scheduled' : 'draft',
+        status: form.is_just_in_time || form.scheduled_at ? 'scheduled' : 'draft',
       });
       navigate(`/webinars/${webinar.id}`);
     } catch (err) {
@@ -138,40 +143,126 @@ export default function CreateWebinarPage() {
             <span className="input-hint">YouTube ou Vimeo</span>
           </div>
 
-          {/* Schedule */}
-          <div className="form-row">
-            <div className="input-group">
-              <label className="input-label" htmlFor="cw-date">
-                {t('webinar.scheduledAt')}
-              </label>
-              <input
-                id="cw-date"
-                type="datetime-local"
-                className="input"
-                value={form.scheduled_at}
-                onChange={(e) => updateField('scheduled_at', e.target.value)}
-              />
-            </div>
-            <div className="input-group">
-              <label className="input-label" htmlFor="cw-tz">
-                {t('webinar.timezone')}
-              </label>
-              <select
-                id="cw-tz"
-                className="input select"
-                value={form.timezone}
-                onChange={(e) => updateField('timezone', e.target.value)}
+          {/* Presenter */}
+          <div className="input-group">
+            <label className="input-label" htmlFor="cw-presenter">
+              Nome do apresentador
+            </label>
+            <input
+              id="cw-presenter"
+              type="text"
+              className="input"
+              placeholder="Ex: João Silva"
+              value={form.presenter_name}
+              onChange={(e) => updateField('presenter_name', e.target.value)}
+            />
+          </div>
+
+          {/* Webinar mode: único vs Just-in-Time */}
+          <div className="input-group">
+            <label className="input-label">Modo do webinário</label>
+            <div className="type-selector">
+              <button
+                type="button"
+                className={`type-option ${!form.is_just_in_time ? 'selected' : ''}`}
+                onClick={() => updateField('is_just_in_time', false)}
               >
-                <option value="America/Sao_Paulo">São Paulo (BRT)</option>
-                <option value="America/New_York">New York (EST)</option>
-                <option value="America/Chicago">Chicago (CST)</option>
-                <option value="America/Denver">Denver (MST)</option>
-                <option value="America/Los_Angeles">Los Angeles (PST)</option>
-                <option value="Europe/London">London (GMT)</option>
-                <option value="Europe/Paris">Paris (CET)</option>
-                <option value="Asia/Tokyo">Tokyo (JST)</option>
-              </select>
+                <CalendarClock size={24} />
+                <span className="type-option-label">Webinar único</span>
+                <span className="type-option-desc">Data e hora fixas para todos</span>
+              </button>
+              <button
+                type="button"
+                className={`type-option ${form.is_just_in_time ? 'selected' : ''}`}
+                onClick={() => updateField('is_just_in_time', true)}
+              >
+                <InfinityIcon size={24} />
+                <span className="type-option-label">Just in Time (evergreen)</span>
+                <span className="type-option-desc">Começa quando o lead entra</span>
+              </button>
             </div>
+          </div>
+
+          {!form.is_just_in_time && (
+            <div className="form-row">
+              <div className="input-group">
+                <label className="input-label" htmlFor="cw-date">
+                  {t('webinar.scheduledAt')}
+                </label>
+                <input
+                  id="cw-date"
+                  type="datetime-local"
+                  className="input"
+                  value={form.scheduled_at}
+                  onChange={(e) => updateField('scheduled_at', e.target.value)}
+                />
+              </div>
+              <div className="input-group">
+                <label className="input-label" htmlFor="cw-tz">
+                  {t('webinar.timezone')}
+                </label>
+                <select
+                  id="cw-tz"
+                  className="input select"
+                  value={form.timezone}
+                  onChange={(e) => updateField('timezone', e.target.value)}
+                >
+                  <option value="America/Sao_Paulo">São Paulo (BRT)</option>
+                  <option value="America/New_York">New York (EST)</option>
+                  <option value="America/Chicago">Chicago (CST)</option>
+                  <option value="America/Denver">Denver (MST)</option>
+                  <option value="America/Los_Angeles">Los Angeles (PST)</option>
+                  <option value="Europe/London">London (GMT)</option>
+                  <option value="Europe/Paris">Paris (CET)</option>
+                  <option value="Asia/Tokyo">Tokyo (JST)</option>
+                </select>
+              </div>
+            </div>
+          )}
+
+          {form.is_just_in_time && (
+            <div className="form-row">
+              <div className="input-group">
+                <label className="input-label" htmlFor="cw-recurrence">
+                  Recorrência das sessões
+                </label>
+                <select
+                  id="cw-recurrence"
+                  className="input select"
+                  value={form.recurrence_type}
+                  onChange={(e) => updateField('recurrence_type', e.target.value)}
+                >
+                  <option value={RECURRENCE_TYPE.NONE}>Sempre disponível (inicia na entrada)</option>
+                  <option value={RECURRENCE_TYPE.DAILY}>Sessões diárias</option>
+                  <option value={RECURRENCE_TYPE.WEEKLY}>Sessões semanais</option>
+                </select>
+              </div>
+              <div className="input-group">
+                <label className="input-label" htmlFor="cw-duration">
+                  Duração da sessão (minutos)
+                </label>
+                <input
+                  id="cw-duration"
+                  type="number"
+                  className="input"
+                  min={1}
+                  value={form.session_duration_minutes}
+                  onChange={(e) => updateField('session_duration_minutes', parseInt(e.target.value, 10) || 60)}
+                />
+              </div>
+            </div>
+          )}
+
+          <div className="input-group">
+            <label className="input-label toggle-label">
+              <input
+                type="checkbox"
+                className="toggle"
+                checked={form.use_wait_room}
+                onChange={(e) => updateField('use_wait_room', e.target.checked)}
+              />
+              Usar sala de espera antes do início
+            </label>
           </div>
 
           {/* Replay */}
@@ -216,7 +307,7 @@ export default function CreateWebinarPage() {
             </button>
             <button
               type="submit"
-              className="btn btn-primary btn-lg"
+              className="btn btn-create btn-lg"
               disabled={loading || !form.title}
             >
               {loading ? (

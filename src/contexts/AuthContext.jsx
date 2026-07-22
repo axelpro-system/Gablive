@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
+import { logAudit } from '../lib/audit';
 
 const AuthContext = createContext(null);
 
@@ -37,7 +38,16 @@ export function AuthProvider({ children }) {
       async (event, session) => {
         setUser(session?.user ?? null);
         if (session?.user) {
-          await fetchProfile(session.user.id);
+          const p = await fetchProfile(session.user.id);
+          if (p && event === 'SIGNED_IN') {
+            logAudit({
+              orgId: p.org_id,
+              userId: p.user_id,
+              action: 'login',
+              entityType: 'user_session',
+              description: `Usuário ${p.display_name || p.user_id} fez login`,
+            });
+          }
         } else {
           setProfile(null);
         }
@@ -67,14 +77,26 @@ export function AuthProvider({ children }) {
       password,
     });
     if (error) throw error;
+    // Audit log disparado pelo onAuthStateChange SIGNED_IN
     return data;
   };
 
   const signOut = async () => {
+    const p = profile; // captura antes de limpar
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
     setUser(null);
     setProfile(null);
+    // Fire-and-forget: log de logout
+    if (p?.org_id) {
+      logAudit({
+        orgId: p.org_id,
+        userId: p.user_id,
+        action: 'logout',
+        entityType: 'user_session',
+        description: `Usuário ${p.display_name || p.user_id} fez logout`,
+      });
+    }
   };
 
   const resetPassword = async (email) => {
