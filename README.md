@@ -132,6 +132,8 @@ gablive/
 |----------|-----------|---------|
 | `VITE_SUPABASE_URL` | URL do projeto Supabase | — |
 | `VITE_SUPABASE_ANON_KEY` | Chave anônima do Supabase | — |
+| `RESEND_API_KEY` | API key do Resend para envio de e-mails transacionais | — |
+| `EMAIL_FROM` | Endereço de remetente dos e-mails | `onboarding@resend.dev` |
 
 ### Configurações do Supabase
 
