@@ -1,4 +1,4 @@
-# Webinar SaaS
+# Gablive
 
 Plataforma multi-tenant de webinários para funil de vendas — crie, gerencie e converta com webinários ao vivo, gravados e evergreen (Just-in-Time).
 
@@ -25,7 +25,7 @@ Plataforma multi-tenant de webinários para funil de vendas — crie, gerencie e
 ```bash
 # 1. Clone e instale
 git clone <repo-url>
-cd webinar-saas
+cd gablive
 npm install
 
 # 2. Configure variáveis de ambiente
@@ -88,7 +88,7 @@ O app abre em `http://localhost:3000`.
 ## Estrutura do Projeto
 
 ```
-webinar-saas/
+gablive/
 ├── src/
 │   ├── components/
 │   │   ├── editor/          # Editores (registro, e-mails, interações, analytics)

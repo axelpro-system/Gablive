@@ -1,4 +1,4 @@
-export const APP_NAME = 'Webinar SaaS';
+export const APP_NAME = 'Gablive';
 
 export const ROLES = {
   ADMIN: 'admin',
