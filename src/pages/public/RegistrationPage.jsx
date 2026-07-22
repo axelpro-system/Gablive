@@ -55,7 +55,6 @@ export default function RegistrationPage() {
       setLoading(false);
     };
     fetch();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug]);
 
   const countdown = useCountdown(webinar?.scheduled_at);
