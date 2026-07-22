@@ -10,22 +10,28 @@ export class WebinarRoomPage {
   readonly ctaBuyButton: Locator
   readonly originalPrice: Locator
   readonly salePrice: Locator
+  readonly loadingSpinner: Locator
+  readonly pageTitle: Locator
 
   constructor(page: Page) {
     this.page = page
-    this.videoPlayer = page.locator('[data-testid="video-player"], .video-container, iframe')
-    this.audienceCounter = page.locator('[data-testid="audience-counter"], .audience-count')
-    this.chatContainer = page.locator('[data-testid="chat-container"], .chat-panel')
-    this.chatMessages = page.locator('[data-testid="chat-message"], .chat-message-item')
-    this.ctaBanner = page.locator('[data-testid="cta-banner"], .cta-overlay, .cta-banner')
-    this.ctaBuyButton = page.locator('[data-testid="cta-buy-button"], .cta-buy-btn')
-    this.originalPrice = page.locator('[data-testid="original-price"], .original-price')
-    this.salePrice = page.locator('[data-testid="sale-price"], .sale-price')
+    this.videoPlayer = page.locator('.room-video-wrapper iframe')
+    this.audienceCounter = page.locator('.room-viewers')
+    this.chatContainer = page.locator('.room-chat')
+    this.chatMessages = page.locator('.room-chat-message')
+    this.ctaBanner = page.locator('.room-cta-banner')
+    this.ctaBuyButton = page.locator('.room-cta-button')
+    this.originalPrice = page.locator('.room-cta-price-original')
+    this.salePrice = page.locator('.room-cta-price-sale')
+    this.loadingSpinner = page.locator('.room-loading')
+    this.pageTitle = page.locator('.room-title')
   }
 
   async goto(slug: string) {
     await this.page.goto(`/room/${slug}`)
-    await this.page.waitForLoadState('networkidle')
+    // Wait for page content to load
+    await this.page.waitForSelector('.room-loading', { state: 'hidden', timeout: 15000 }).catch(() => {})
+    await this.page.waitForSelector('.room-page', { timeout: 15000 }).catch(() => {})
   }
 
   async waitForPlayer() {
@@ -49,6 +55,16 @@ export class WebinarRoomPage {
 
   async isCtaVisible(): Promise<boolean> {
     return this.ctaBanner.isVisible().catch(() => false)
+  }
+
+  async getCtaPrices(): Promise<{ original: string | null; sale: string | null }> {
+    const original = await this.originalPrice.isVisible().catch(() => false)
+      ? await this.originalPrice.textContent()
+      : null
+    const sale = await this.salePrice.isVisible().catch(() => false)
+      ? await this.salePrice.textContent()
+      : null
+    return { original, sale }
   }
 
   async clickCta() {

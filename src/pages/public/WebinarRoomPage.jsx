@@ -76,7 +76,7 @@ export default function WebinarRoomPage() {
   // Fetch webinar data
   useEffect(() => {
     const fetchWebinar = async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('webinars')
         .select(`
           *,
