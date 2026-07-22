@@ -15,6 +15,7 @@ const CreateWebinarPage = lazy(() => import('./pages/dashboard/CreateWebinarPage
 const EditWebinarPage = lazy(() => import('./pages/dashboard/EditWebinarPage'));
 const AdminDashboardPage = lazy(() => import('./pages/dashboard/AdminDashboardPage'));
 const GlobalAnalyticsPage = lazy(() => import('./pages/dashboard/GlobalAnalyticsPage'));
+const LeadsPage = lazy(() => import('./pages/dashboard/LeadsPage'));
 const SettingsPage = lazy(() => import('./pages/dashboard/SettingsPage'));
 const AuditLogPage = lazy(() => import('./pages/dashboard/AuditLogPage'));
 const UsersPage = lazy(() => import('./pages/dashboard/UsersPage'));
@@ -112,6 +113,7 @@ export default function App() {
             <Route path="/webinars/create" element={<CreateWebinarPage />} />
             <Route path="/webinars/:id" element={<EditWebinarPage />} />
             <Route path="/analytics" element={<GlobalAnalyticsPage />} />
+            <Route path="/leads" element={<LeadsPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/admin" element={<AdminDashboardPage />} />
             <Route path="/audit" element={<AuditLogPage />} />

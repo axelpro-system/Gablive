@@ -42,6 +42,7 @@ export default function AppLayout() {
     { to: '/dashboard', icon: LayoutDashboard, label: t('dashboard.title') },
     { to: '/webinars', icon: Video, label: t('webinar.webinars') },
     { to: '/analytics', icon: BarChart3, label: t('analytics.title') },
+    { to: '/leads', icon: Users, label: 'Leads' },
     { to: '/settings', icon: Settings, label: t('common.settings') },
   ];
 
