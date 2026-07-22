@@ -112,6 +112,34 @@ export default function RegistrationPage() {
 
       trackEvent(webinar.id, reg.id, ANALYTICS_EVENTS.REGISTRATION);
 
+      // Send confirmation email (async, non-blocking)
+      supabase
+        .from('email_configs')
+        .select('subject, body_html')
+        .eq('webinar_id', webinar.id)
+        .eq('type', 'confirmation')
+        .eq('enabled', true)
+        .single()
+        .then(({ data: emailConfig }) => {
+          if (emailConfig?.subject && emailConfig?.body_html) {
+            const REPLAY_URL = `${window.location.origin}/replay/${webinar.slug}`;
+            const html = emailConfig.body_html
+              .replace(/\{name\}/g, cleanName)
+              .replace(/\{webinar_title\}/g, webinar.title)
+              .replace(/\{replay_url\}/g, REPLAY_URL);
+
+            fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-email`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                to: cleanEmail,
+                subject: emailConfig.subject.replace(/\{webinar_title\}/g, webinar.title),
+                html,
+              }),
+            }).catch(console.error);
+          }
+        });
+
       // Store registration ID for room access
       localStorage.setItem(`webinar-reg-${webinar.id}`, reg.id);
 

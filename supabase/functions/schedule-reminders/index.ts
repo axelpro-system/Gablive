@@ -33,14 +33,13 @@ serve(async (_req) => {
 
   const now = new Date().toISOString()
 
-  // Find enabled reminder email configs with their webinars
+  // Find enabled reminder and replay email configs with their webinars
   const { data: configs, error: configError } = await supabaseClient
     .from("email_configs")
     .select("*, webinars!inner(*)")
-    .eq("type", "reminder")
+    .in("type", ["reminder", "replay"])
     .eq("enabled", true)
     .not("send_before_minutes", "is", null)
-    .gte("webinars.scheduled_at", now)
 
   if (configError) {
     console.error("Error fetching email configs:", configError)
@@ -64,10 +63,20 @@ serve(async (_req) => {
     const config = cfg as unknown as EmailConfig & { webinars: Webinar }
     const webinar = config.webinars
 
-    // Calculate when to send: scheduled_at - send_before_minutes
+    // Calculate when to send:
+    // - reminder (send_before_minutes > 0): X minutes BEFORE webinar starts
+    // - replay  (send_before_minutes < 0): X minutes AFTER webinar starts
+    const isReplay = config.send_before_minutes < 0
     const sendAt = new Date(
-      new Date(webinar.scheduled_at).getTime() - (config.send_before_minutes ?? 0) * 60 * 1000,
+      new Date(webinar.scheduled_at).getTime() +
+        (config.send_before_minutes ?? 0) * 60 * 1000,
     )
+
+    // For replay, only send after the webinar has started
+    if (isReplay && new Date(webinar.scheduled_at) > new Date()) {
+      skipped++
+      continue
+    }
 
     // Skip if the send time has already passed
     if (sendAt <= new Date()) {
