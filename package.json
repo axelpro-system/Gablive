@@ -7,7 +7,11 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test:e2e": "npx playwright test --config=tests/e2e/playwright.config.ts",
+    "test:e2e:critical": "npx playwright test specs/critical --config=tests/e2e/playwright.config.ts --project=critical-flows",
+    "test:e2e:ui": "npx playwright test --config=tests/e2e/playwright.config.ts --ui",
+    "test:e2e:debug": "npx playwright test --config=tests/e2e/playwright.config.ts --debug"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.0",
@@ -23,6 +27,7 @@
     "recharts": "^2.15.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.1",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^4.7.0",
