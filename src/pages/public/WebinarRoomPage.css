@@ -607,3 +607,37 @@
     min-width: 56px;
   }
 }
+
+/* Immersive Landscape Mode (Celular Deitado) */
+@media (max-height: 500px) and (orientation: landscape) {
+  .room-header {
+    display: none !important;
+  }
+
+  .room-sidebar {
+    display: none !important;
+  }
+
+  .room-content {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr;
+    height: 100dvh;
+  }
+
+  .room-video-area {
+    width: 100vw;
+    height: 100dvh;
+    aspect-ratio: unset;
+  }
+
+  .room-video-wrapper {
+    width: 100vw;
+    height: 100dvh;
+  }
+
+  .room-video-iframe {
+    width: 100vw;
+    height: 100dvh;
+    min-height: unset;
+  }
+}
