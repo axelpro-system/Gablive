@@ -33,6 +33,11 @@ pnpm-debug.log*
 Thumbs.db
 
 # Playwright
+test-results/
+playwright-report/
 tests/e2e/test-results/
 tests/e2e/playwright-report/
 tests/e2e/artifacts/
+
+# Docs artifacts
+docs/*.pdf
