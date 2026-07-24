@@ -1,0 +1,13 @@
+<svg width="640" height="160" viewBox="0 0 640 160" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Gablive</title>
+  <desc id="desc">Logotipo oficial do Sistema Gablive para fundo escuro</desc>
+  <g transform="translate(8 8)">
+    <rect width="144" height="144" rx="40" fill="#FCFCFD"/>
+    <path d="M38 91C38 70.565 54.565 54 75 54H108" stroke="#101828" stroke-width="13" stroke-linecap="round"/>
+    <path d="M38 91C38 111.435 54.565 128 75 128H108" stroke="#E31C23" stroke-width="13" stroke-linecap="round"/>
+    <path d="M75 54V128" stroke="#101828" stroke-width="13" stroke-linecap="round"/>
+    <circle cx="108" cy="91" r="8" fill="#E31C23"/>
+  </g>
+  <text x="184" y="105" fill="#FCFCFD" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="78" font-weight="800" letter-spacing="-3.8">Gab</text>
+  <text x="360" y="105" fill="#F07171" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="78" font-weight="800" letter-spacing="-3.8">live</text>
+</svg>

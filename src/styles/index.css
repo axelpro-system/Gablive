@@ -19,6 +19,12 @@ html {
   -moz-osx-font-smoothing: grayscale;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-weight: 400;
@@ -64,6 +70,21 @@ body {
   --brand-red-muted: #f5a3a6;
   --brand-red-deep: #b01018;
 
+  /* Gablive brand identity tokens (alias do brand-tokens.css oficial) */
+  --gablive-ink: #101828;
+  --gablive-ink-raised: #1d2939;
+  --gablive-slate: #475467;
+  --gablive-muted: #98a2b3;
+  --gablive-border: #d0d5dd;
+  --gablive-surface: #fcfcfd;
+  --gablive-white: #ffffff;
+  --gablive-brand-red: #ef2b2d;
+  --gablive-brand-red-strong: #e31c23;
+  --gablive-brand-red-soft: #fde8e9;
+  --gablive-success: #12b76a;
+  --gablive-warning: #f79009;
+  --gablive-danger: #f04438;
+
   /* Create / positive action (verde escuro — distinto do vermelho de marca) */
   --color-create-600: #14532d;
   --color-create-700: #0f3d22;
@@ -102,7 +123,7 @@ body {
   --color-surface-raised: var(--color-white);
   --color-text: var(--color-gray-900);
   --color-text-secondary: var(--color-gray-600);
-  --color-text-tertiary: var(--color-gray-500);
+  --color-text-tertiary: var(--color-gray-600);
   --color-text-placeholder: var(--color-gray-400);
   --color-text-inverse: var(--color-white);
   --color-border: var(--color-gray-200);
@@ -307,13 +328,13 @@ p {
 
 /* Button variants */
 .btn-primary {
-  background-color: var(--color-primary-600);
+  background-color: var(--gablive-brand-red);
   color: var(--color-text-inverse);
   box-shadow: var(--shadow-xs);
 }
 
 .btn-primary:hover {
-  background-color: var(--color-primary-700);
+  background-color: var(--gablive-brand-red-strong);
   box-shadow: var(--shadow-sm);
 }
 
@@ -967,4 +988,24 @@ p {
 ::selection {
   background-color: var(--color-primary-100);
   color: var(--color-primary-900);
+}
+
+/* --- Accessibility: prefers-reduced-motion --- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* --- Touch targets (mobile) --- */
+@media (max-width: 767.98px) {
+  .btn-icon {
+    min-width: 44px;
+    min-height: 44px;
+  }
 }

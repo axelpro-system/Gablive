@@ -1,74 +1,21 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '../../lib/supabase';
-import { ANALYTICS_EVENTS } from '../../lib/constants';
+import { useAnalytics } from '../../hooks/useAnalytics';
 import { BarChart3, Users, Clock, MousePointer2, Download } from 'lucide-react';
 import './AnalyticsDashboard.css';
 
 export default function AnalyticsDashboard({ webinarId }) {
-  const [stats, setStats] = useState({
-    totalRegistrations: 0,
-    totalAttendees: 0,
-    conversionRate: 0,
-    ctaClicks: 0,
-    pollResponses: 0,
-    webinarEntered: 0,
-    watch15: 0,
-    watch30: 0,
-    watch45: 0,
-    watch60: 0,
-    pitchReached: 0,
-    offerShown: 0,
-  });
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchAnalytics = async () => {
-      // Fetch registrations
-      const { count: regCount } = await supabase
-        .from('registrations')
-        .select('*', { count: 'exact', head: true })
-        .eq('webinar_id', webinarId);
-
-      // Fetch attendees (registered and attended)
-      const { count: attCount } = await supabase
-        .from('registrations')
-        .select('*', { count: 'exact', head: true })
-        .eq('webinar_id', webinarId)
-        .eq('attended', true);
-
-      // Fetch events
-      const { data: events } = await supabase
-        .from('analytics_events')
-        .select('event_type, registration_id')
-        .eq('webinar_id', webinarId);
-
-      const countDistinctRegs = (type) =>
-        new Set((events || []).filter(e => e.event_type === type && e.registration_id).map(e => e.registration_id)).size;
-
-      const ctaClicks = events?.filter(e => e.event_type === ANALYTICS_EVENTS.CTA_CLICK).length || 0;
-      const pollResponses = events?.filter(e => e.event_type === ANALYTICS_EVENTS.POLL_RESPONSE).length || 0;
-
-      setStats({
-        totalRegistrations: regCount || 0,
-        totalAttendees: attCount || 0,
-        conversionRate: regCount ? Math.round((attCount / regCount) * 100) : 0,
-        ctaClicks,
-        pollResponses,
-        webinarEntered: countDistinctRegs(ANALYTICS_EVENTS.WEBINAR_ENTERED),
-        watch15: countDistinctRegs(ANALYTICS_EVENTS.WATCH_15),
-        watch30: countDistinctRegs(ANALYTICS_EVENTS.WATCH_30),
-        watch45: countDistinctRegs(ANALYTICS_EVENTS.WATCH_45),
-        watch60: countDistinctRegs(ANALYTICS_EVENTS.WATCH_60),
-        pitchReached: countDistinctRegs(ANALYTICS_EVENTS.PITCH_REACHED),
-        offerShown: countDistinctRegs(ANALYTICS_EVENTS.OFFER_SHOWN),
-      });
-      setLoading(false);
-    };
-
-    fetchAnalytics();
-  }, [webinarId]);
+  const { stats, loading, error } = useAnalytics(webinarId);
 
   if (loading) return <div className="spinner spinner-sm" />;
+
+  if (error || !stats) {
+    return (
+      <div className="analytics-dashboard">
+        <p className="text-gray-500 text-sm">
+          Não foi possível carregar as métricas. Confirme se a migration 005 está aplicada.
+        </p>
+      </div>
+    );
+  }
 
   const handleExportCsv = () => {
     const rows = [
@@ -77,6 +24,7 @@ export default function AnalyticsDashboard({ webinarId }) {
       ['Participantes (ao vivo/replay)', stats.totalAttendees],
       ['Taxa de comparecimento', `${stats.conversionRate}%`],
       ['Cliques em CTA', stats.ctaClicks],
+      ['Visualizações de CTA', stats.ctaViews],
       ['Respostas em enquetes', stats.pollResponses],
       ['Entraram no webinar', stats.webinarEntered],
       ['Assistiram 15 min', stats.watch15],
@@ -85,9 +33,10 @@ export default function AnalyticsDashboard({ webinarId }) {
       ['Assistiram 60 min', stats.watch60],
       ['Chegaram ao pitch', stats.pitchReached],
       ['Viram a oferta', stats.offerShown],
+      ['Tempo médio de assistência (s)', stats.avgWatchTime],
     ];
 
-    const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const csv = rows.map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
     const BOM = '\uFEFF';
     const blob = new Blob([BOM + csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -105,7 +54,7 @@ export default function AnalyticsDashboard({ webinarId }) {
           <BarChart3 size={20} className="text-gray-400" />
           <h3>Desempenho do Webinário</h3>
         </div>
-        <button className="btn btn-secondary" onClick={handleExportCsv}>
+        <button type="button" className="btn btn-secondary" onClick={handleExportCsv}>
           <Download size={16} /> Exportar CSV
         </button>
       </div>

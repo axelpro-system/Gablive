@@ -32,11 +32,10 @@ export default function WaitRoomPage() {
         setWebinar(data);
         const regId = localStorage.getItem(`webinar-reg-${data.id}`);
         if (regId) {
-          const { data: reg } = await supabase
-            .from('registrations')
-            .select('*')
-            .eq('id', regId)
-            .single();
+          const { data: regRows } = await supabase.rpc('get_registration_by_id', {
+            p_id: regId,
+          });
+          const reg = Array.isArray(regRows) ? regRows[0] : regRows;
           if (reg) setRegistration(reg);
         } else {
           navigate(`/register/${slug}`, { replace: true });

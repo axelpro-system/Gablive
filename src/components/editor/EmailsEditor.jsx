@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Save, Mail, Clock } from 'lucide-react';
+import { defaultEmailConfigsForWebinar, getDefaultEmailBodyHtml } from '../../lib/emailTemplates';
 import './EmailsEditor.css';
 
 export default function EmailsEditor({ webinarId }) {
@@ -10,24 +11,31 @@ export default function EmailsEditor({ webinarId }) {
 
   useEffect(() => {
     const fetchConfigs = async () => {
-      let { data, error } = await supabase
+      let { data } = await supabase
         .from('email_configs')
         .select('*')
         .eq('webinar_id', webinarId)
         .order('type');
 
       if (!data || data.length === 0) {
-        // Create defaults if they don't exist
-        const defaults = [
-          { webinar_id: webinarId, type: 'confirmation', subject: 'Confirmação de Inscrição', body_html: '<p>Obrigado por se inscrever!</p>', send_before_minutes: null, enabled: true },
-          { webinar_id: webinarId, type: 'reminder', subject: 'Começa em 1 hora!', body_html: '<p>Seu webinário começa em breve.</p>', send_before_minutes: 60, enabled: true },
-          { webinar_id: webinarId, type: 'replay', subject: 'Replay Liberado', body_html: '<p>O replay do webinário já está disponível.</p>', send_before_minutes: -1440, enabled: true }, // 24 hours after
-        ];
-
+        const defaults = defaultEmailConfigsForWebinar(webinarId);
         const { data: created } = await supabase.from('email_configs').insert(defaults).select();
         data = created;
+      } else {
+        // Backfill empty bodies with branded Resend-ready templates
+        const patched = [];
+        for (const row of data) {
+          if (!row.body_html || !String(row.body_html).trim()) {
+            const body_html = getDefaultEmailBodyHtml(row.type);
+            await supabase.from('email_configs').update({ body_html }).eq('id', row.id);
+            patched.push({ ...row, body_html });
+          } else {
+            patched.push(row);
+          }
+        }
+        data = patched;
       }
-      
+
       if (data) setConfigs(data);
       setLoading(false);
     };
@@ -116,7 +124,9 @@ export default function EmailsEditor({ webinarId }) {
                   onChange={e => updateConfig(config.id, 'body_html', e.target.value)}
                   disabled={!config.enabled}
                 />
-                <span className="input-hint">Use variáveis como {'{{name}}'}, {'{{link}}'}.</span>
+                <span className="input-hint">
+                  Variáveis: {'{name}'}, {'{webinar_title}'}, {'{wait_url}'}, {'{room_url}'}, {'{replay_url}'}, {'{email}'}
+                </span>
               </div>
             </div>
           </div>

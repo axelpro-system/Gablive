@@ -46,7 +46,7 @@ export default function RegisterPage() {
         <div className="auth-card">
           <div className="auth-header">
             <div className="auth-logo">
-              <div className="sidebar-logo-icon">W</div>
+              <img src="/gablive-logo.svg" alt="Gablive" className="auth-logo-img" />
             </div>
             <h1 className="auth-title">{t('auth.registerTitle')}</h1>
             <p className="auth-subtitle">{t('auth.registerSubtitle')}</p>

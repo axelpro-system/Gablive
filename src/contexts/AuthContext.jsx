@@ -1,10 +1,11 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { supabase } from '../lib/supabase';
+import { useSupabase } from './SupabaseContext';
 import { logAudit } from '../lib/audit';
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
+  const supabase = useSupabase();
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);

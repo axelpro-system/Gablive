@@ -85,7 +85,7 @@ export default function DashboardPage() {
           <p className="page-subtitle">{t('dashboard.overview')}</p>
         </div>
         <Link to="/webinars/create" className="btn btn-primary">
-          <Plus size={18} />
+          <Plus size={18} aria-hidden="true" />
           {t('webinar.createWebinar')}
         </Link>
       </div>
@@ -95,7 +95,7 @@ export default function DashboardPage() {
         {stats.map((stat) => (
           <div key={stat.label} className="stat-card">
             <div className="stat-card-icon" style={{ color: stat.color }}>
-              <stat.icon size={22} />
+              <stat.icon size={22} aria-hidden="true" />
             </div>
             <div>
               <p className="stat-card-label">{stat.label}</p>
@@ -113,7 +113,7 @@ export default function DashboardPage() {
               <h3>{t('dashboard.recentWebinars')}</h3>
               <Link to="/webinars" className="btn btn-ghost btn-sm">
                 {t('common.all')}
-                <ArrowRight size={14} />
+                <ArrowRight size={14} aria-hidden="true" />
               </Link>
             </div>
           </div>

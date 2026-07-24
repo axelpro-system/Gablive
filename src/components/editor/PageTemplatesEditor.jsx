@@ -3,7 +3,9 @@ import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { useOrg } from '../../contexts/OrgContext';
 import { logAudit } from '../../lib/audit';
+import { PAGE_TEMPLATE_PRESETS } from '../../lib/pageTemplatePresets';
 import { Layout, Plus, Trash2, Edit3, X, FileText, Clock, Copy } from 'lucide-react';
+import './PageTemplatesEditor.css';
 
 const TYPE_LABELS = {
   registration: 'Página de Registro',
@@ -44,19 +46,47 @@ export default function PageTemplatesEditor() {
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [installingPreset, setInstallingPreset] = useState('');
   const [form, setForm] = useState({ name: '', type: 'registration', subtype: 'legacy' });
 
   const fetchTemplates = useCallback(async () => {
     if (!orgId) return;
     setLoading(true);
-    const { data, error } = await supabase
+    const { data: existingTemplates, error } = await supabase
       .from('page_templates')
       .select('*')
       .eq('org_id', orgId)
       .order('created_at', { ascending: false });
 
-    if (!error && data) {
-      setTemplates(data);
+    if (!error && existingTemplates) {
+      const existingNames = new Set(existingTemplates.map((template) => template.name));
+      const missingPresets = PAGE_TEMPLATE_PRESETS.filter((preset) => !existingNames.has(preset.name));
+
+      if (missingPresets.length > 0) {
+        const { error: installError } = await supabase.from('page_templates').insert(
+          missingPresets.map((preset) => ({
+            org_id: orgId,
+            name: preset.name,
+            type: preset.type,
+            subtype: preset.subtype,
+            blocks: preset.blocks,
+            theme: preset.theme,
+          }))
+        );
+
+        if (!installError) {
+          const { data: installedTemplates } = await supabase
+            .from('page_templates')
+            .select('*')
+            .eq('org_id', orgId)
+            .order('created_at', { ascending: false });
+          setTemplates(installedTemplates || existingTemplates);
+          setLoading(false);
+          return;
+        }
+      }
+
+      setTemplates(existingTemplates);
     }
     setLoading(false);
   }, [orgId]);
@@ -179,6 +209,31 @@ export default function PageTemplatesEditor() {
     }
   };
 
+  const handleInstallPreset = async (preset) => {
+    if (!orgId || installingPreset) return;
+    setInstallingPreset(preset.id);
+    const { error } = await supabase.from('page_templates').insert({
+      org_id: orgId,
+      name: preset.name,
+      type: preset.type,
+      subtype: preset.subtype,
+      blocks: preset.blocks,
+      theme: preset.theme,
+    });
+
+    if (!error) {
+      logAudit({
+        orgId,
+        userId: user?.id,
+        action: 'create',
+        entityType: 'template',
+        description: `Preset "${preset.name}" adicionado`,
+      });
+      await fetchTemplates();
+    }
+    setInstallingPreset('');
+  };
+
   const getBlockCount = (template) => {
     const blocks = template.blocks;
     if (Array.isArray(blocks)) return blocks.length;
@@ -203,6 +258,55 @@ export default function PageTemplatesEditor() {
           Novo template
         </button>
       </div>
+
+      <section className="template-presets">
+        <div className="template-presets-heading">
+          <div>
+            <span className="template-presets-eyebrow">Coleção GabLive</span>
+            <h2>Comece com um modelo pronto</h2>
+          </div>
+          <p>Adicione um preset à sua biblioteca e personalize todos os textos no construtor.</p>
+        </div>
+        <div className="template-presets-grid">
+          {PAGE_TEMPLATE_PRESETS.map((preset) => {
+            const installed = templates.some((template) => template.name === preset.name);
+            return (
+              <article className="template-preset-card" key={preset.id}>
+                <div className={`template-preset-preview template-preset-preview--${preset.tone}`}>
+                  <div className="template-preview-nav" />
+                  <div className="template-preview-layout">
+                    <div>
+                      <span />
+                      <strong />
+                      <strong />
+                      <p />
+                      <button type="button" tabIndex={-1} />
+                    </div>
+                    <aside>
+                      <span />
+                      <i />
+                      <i />
+                      <button type="button" tabIndex={-1} />
+                    </aside>
+                  </div>
+                </div>
+                <div className="template-preset-content">
+                  <span className="badge badge-brand">Página de registro</span>
+                  <h3>{preset.name}</h3>
+                  <p>{preset.description}</p>
+                  <button className={installed ? 'btn btn-secondary' : 'btn btn-create'}
+                    type="button" disabled={installed || Boolean(installingPreset)}
+                    onClick={() => handleInstallPreset(preset)}>
+                    {installingPreset === preset.id
+                      ? 'Adicionando...'
+                      : installed ? 'Adicionado' : 'Adicionar à biblioteca'}
+                  </button>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      </section>
 
       {/* Template grid */}
       {loading ? (

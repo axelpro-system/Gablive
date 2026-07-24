@@ -3,20 +3,11 @@ import { supabase } from '../lib/supabase';
 import { useOrg } from '../contexts/OrgContext';
 import { useAuth } from '../contexts/AuthContext';
 import { logAudit } from '../lib/audit';
+import { defaultEmailConfigsForWebinar } from '../lib/emailTemplates';
+import { slugBaseFromTitle } from '../lib/slugify';
 
-function slugify(text) {
-  return (text || '')
-    .toString()
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)+/g, '');
-}
-
-async function generateUniqueSlug(orgId, title) {
-  const base = slugify(title) || 'webinar';
+async function generateUniqueSlug(orgId, title, videoUrl = '') {
+  const base = slugBaseFromTitle(title, videoUrl);
   let candidate = base;
   let attempt = 0;
 
@@ -162,11 +153,28 @@ export function useCreateWebinar() {
     if (!orgId) throw new Error('No organization');
     setLoading(true);
     try {
-      const slug = await generateUniqueSlug(orgId, webinarData.title);
+      const slug = await generateUniqueSlug(
+        orgId,
+        webinarData.title,
+        webinarData.video_url
+      );
+
+      // If the operator pasted a video URL as the title, keep a clean display title
+      const looksLikeUrl =
+        /^https?:\/\//i.test(webinarData.title || '') ||
+        /youtube\.com|youtu\.be|vimeo\.com/i.test(webinarData.title || '');
+      const payload = {
+        ...webinarData,
+        org_id: orgId,
+        slug,
+        title: looksLikeUrl
+          ? `Webinário ${slug.replace(/^video-/, '').slice(0, 12)}`
+          : webinarData.title,
+      };
 
       const { data, error } = await supabase
         .from('webinars')
-        .insert({ ...webinarData, org_id: orgId, slug })
+        .insert(payload)
         .select()
         .single();
 
@@ -198,12 +206,10 @@ export function useCreateWebinar() {
         published: false,
       });
 
-      // Create default email configs
-      await supabase.from('email_configs').insert([
-        { webinar_id: data.id, type: 'confirmation', subject: 'Registro confirmado!', body_html: '', enabled: true },
-        { webinar_id: data.id, type: 'reminder', subject: 'Seu webinário começa em breve!', body_html: '', send_before_minutes: 60, enabled: true },
-        { webinar_id: data.id, type: 'replay', subject: 'Replay disponível!', body_html: '', enabled: true },
-      ]);
+      // Create default email configs (branded Resend HTML templates)
+      await supabase
+        .from('email_configs')
+        .insert(defaultEmailConfigsForWebinar(data.id));
 
       return data;
     } finally {

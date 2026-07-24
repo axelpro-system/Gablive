@@ -4,6 +4,23 @@ import { MessageSquare, ExternalLink, BarChart3, Plus, Trash2, Save, ShoppingCar
 import { AUDIENCE_MODE } from '../../lib/constants';
 import './InteractionsEditor.css';
 
+const CHAT_TEMPLATES = [
+  { author_name: 'Maria S.', message: 'Que bom estar aqui! Já estava esperando por esse conteúdo 👏' },
+  { author_name: 'João C.', message: 'Excelente apresentação! O conteúdo está muito rico até agora.' },
+  { author_name: 'Ana L.', message: 'Já estou aplicando o que foi mostrado e funcionou muito bem!' },
+  { author_name: 'Carlos M.', message: 'Quanto tempo dura o acesso ao replay depois?' },
+  { author_name: 'Fernanda R.', message: 'Fazia tempo que buscava algo tão completo assim. Obrigada!' },
+  { author_name: 'Pedro A.', message: 'Não quero perder essa oportunidade. Já estou vendo aqui como garantir 🚀' },
+  { author_name: 'Lucas S.', message: 'Acabei de garantir o meu! Link do checkout funcionou perfeitamente ✅' },
+  { author_name: 'Rafaela N.', message: 'Maravilhoso! Vou compartilhar com meus alunos também.' },
+  { author_name: 'Gustavo L.', message: 'Essa dica do minuto 10 mudou completamente minha visão.' },
+  { author_name: 'Juliana B.', message: 'Conteúdo de altíssima qualidade! Estou amando cada minuto 🙌' },
+  { author_name: 'Thiago O.', message: 'Já comprei! Ansioso pra colocar em prática. Parabéns pelo trabalho!' },
+  { author_name: 'Camila D.', message: 'Alguém mais pegou o caderno pra anotar? 😂 Melhor aula que já vi!' },
+  { author_name: 'Ricardo P.', message: 'Simplesmente sensacional. Valeu cada segundo aqui assistindo!' },
+  { author_name: 'Vinicius S.', message: 'Tinha dúvida sobre isso e você respondeu exatamente agora. Incrível!' },
+];
+
 export default function InteractionsEditor({ webinarId }) {
   const [activeSubTab, setActiveSubTab] = useState('chat');
   const [loading, setLoading] = useState(true);
@@ -103,6 +120,14 @@ export default function InteractionsEditor({ webinarId }) {
       setMessages([...messages, data].sort((a,b) => a.timestamp_seconds - b.timestamp_seconds));
       setNewMsg({ author_name: '', message: '', timestamp_seconds: newMsg.timestamp_seconds + 30 });
     }
+  };
+
+  const handleTemplateClick = (tmpl) => {
+    setNewMsg({
+      author_name: tmpl.author_name,
+      message: tmpl.message,
+      timestamp_seconds: newMsg.timestamp_seconds,
+    });
   };
 
   const deleteMessage = async (id) => {
@@ -226,6 +251,22 @@ export default function InteractionsEditor({ webinarId }) {
               <h4>Timeline do Chat Simulado</h4>
             </div>
             <div className="card-body">
+              {/* Predefined templates */}
+              <div className="chat-templates">
+                <span className="chat-template-label">📋 Clique para preencher:</span>
+                {CHAT_TEMPLATES.map((tmpl, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    className="chat-template-chip"
+                    onClick={() => handleTemplateClick(tmpl)}
+                    title={`${tmpl.author_name}: ${tmpl.message}`}
+                  >
+                    {tmpl.author_name.split(' ')[0]} — {tmpl.message.length > 35 ? tmpl.message.slice(0, 35) + '…' : tmpl.message}
+                  </button>
+                ))}
+              </div>
+
               <form onSubmit={addMessage} className="add-form">
                 <div className="form-row" style={{ gridTemplateColumns: '80px 1fr 2fr auto' }}>
                   <input type="number" className="input" placeholder="Segs." value={newMsg.timestamp_seconds} onChange={e => setNewMsg({...newMsg, timestamp_seconds: parseInt(e.target.value) || 0})} min="0" required />

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="120" viewBox="0 0 600 120" fill="none">
+  <!-- MARK -->
+  <g transform="translate(0, 10)">
+    <!-- outer timeline arc G -->
+    <path d="M50 0 C 22.38 0 0 22.38 0 50 C 0 77.62 22.38 100 50 100 C 72 100 91.5 86.5 98 67 L 78 67 C 73.5 78 62.5 86 50 86 C 30.12 86 14 69.88 14 50 C 14 30.12 30.12 14 50 14 C 58 14 65.5 16.8 71.2 21.5 L 83 10.5 C 74.5 3.8 63 0 50 0 Z" fill="#101828"/>
+    <!-- behavior curve inside -->
+    <path d="M22 52 C 32 42, 38 62, 50 52 C 62 42, 70 48, 82 38" stroke="#101828" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.9"/>
+    <!-- play triangle -->
+    <path d="M38 38 L 38 66 L 60 52 Z" fill="#101828"/>
+    <!-- conversion dot -->
+    <circle cx="92" cy="82" r="7" fill="#EF2B2D"/>
+  </g>
+  <!-- WORDMARK -->
+  <g transform="translate(130, 0)">
+    <text x="0" y="84" font-family="Inter, Sora, Sans-Serif" font-weight="700" font-size="84" letter-spacing="-2">
+      <tspan fill="#101828">Gab</tspan><tspan fill="#EF2B2D">live</tspan>
+    </text>
+  </g>
+</svg>

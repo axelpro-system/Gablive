@@ -1,0 +1,15 @@
+:root {
+  --gablive-ink: #101828;
+  --gablive-ink-raised: #1d2939;
+  --gablive-slate: #475467;
+  --gablive-muted: #98a2b3;
+  --gablive-border: #d0d5dd;
+  --gablive-surface: #fcfcfd;
+  --gablive-white: #ffffff;
+  --gablive-brand-red: #ef2b2d;
+  --gablive-brand-red-strong: #e31c23;
+  --gablive-brand-red-soft: #fde8e9;
+  --gablive-success: #12b76a;
+  --gablive-warning: #f79009;
+  --gablive-danger: #f04438;
+}

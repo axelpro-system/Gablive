@@ -7,7 +7,7 @@ import { useTrackEvent } from '../../hooks/useAnalytics';
 import { BLOCK_TYPES, ANALYTICS_EVENTS, WAIT_ROOM_JIT_DELAY_SECONDS } from '../../lib/constants';
 import { useSeo } from '../../hooks/useSeo';
 import { sanitizeInput, isValidEmail } from '../../lib/sanitize';
-import { CheckCircle, Clock, Star, Quote, ArrowRight, Users } from 'lucide-react';
+import { CheckCircle, Clock, Quote, ArrowRight, ShieldCheck } from 'lucide-react';
 import './RegistrationPage.css';
 
 export default function RegistrationPage() {
@@ -74,15 +74,17 @@ export default function RegistrationPage() {
     }
 
     try {
-      // Check if already registered
-      const { data: existing } = await supabase
-        .from('registrations')
-        .select('id')
-        .eq('webinar_id', webinar.id)
-        .eq('email', cleanEmail)
-        .single();
+      // Check if already registered (RPC — registrations no longer world-readable)
+      const { data: alreadyRegistered, error: checkError } = await supabase.rpc(
+        'check_registration_email',
+        { p_webinar_id: webinar.id, p_email: cleanEmail }
+      );
 
-      if (existing) {
+      if (checkError) {
+        console.error('check_registration_email failed', checkError);
+      }
+
+      if (alreadyRegistered) {
         setError(t('registration.alreadyRegistered'));
         setSubmitting(false);
         return;
@@ -111,31 +113,16 @@ export default function RegistrationPage() {
 
       trackEvent(webinar.id, reg.id, ANALYTICS_EVENTS.REGISTRATION);
 
-      // Send confirmation email (async, non-blocking)
+      // Enqueue confirmation email (durable queue → process-email-queue worker).
+      // Capture the SPA origin so CTAs link here, not a marketing domain.
       supabase
-        .from('email_configs')
-        .select('subject, body_html')
-        .eq('webinar_id', webinar.id)
-        .eq('type', 'confirmation')
-        .eq('enabled', true)
-        .single()
-        .then(({ data: emailConfig }) => {
-          if (emailConfig?.subject && emailConfig?.body_html) {
-            const REPLAY_URL = `${window.location.origin}/replay/${webinar.slug}`;
-            const html = emailConfig.body_html
-              .replace(/\{name\}/g, cleanName)
-              .replace(/\{webinar_title\}/g, webinar.title)
-              .replace(/\{replay_url\}/g, REPLAY_URL);
-
-            fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-email`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                to: cleanEmail,
-                subject: emailConfig.subject.replace(/\{webinar_title\}/g, webinar.title),
-                html,
-              }),
-            }).catch(console.error);
+        .rpc('enqueue_confirmation_email', {
+          p_registration_id: reg.id,
+          p_app_base_url: window.location.origin,
+        })
+        .then(({ error: enqueueError }) => {
+          if (enqueueError) {
+            console.error('enqueue_confirmation_email failed', enqueueError);
           }
         });
 
@@ -192,10 +179,14 @@ export default function RegistrationPage() {
 
   const theme = page?.theme || {};
   const blocks = page?.blocks || [];
+  const usesLegacyTheme = (
+    (!theme.primaryColor || theme.primaryColor.toLowerCase() === '#3366ff')
+    && (!theme.backgroundColor || theme.backgroundColor.toLowerCase() === '#ffffff')
+  );
   const customStyle = {
-    '--reg-primary': theme.primaryColor || 'var(--color-primary-600)',
-    '--reg-bg': theme.backgroundColor || 'var(--color-white)',
-    '--reg-text': theme.textColor || 'var(--color-text)',
+    '--reg-primary': usesLegacyTheme ? '#E31C23' : theme.primaryColor,
+    '--reg-bg': usesLegacyTheme ? '#0F0F10' : theme.backgroundColor,
+    '--reg-text': usesLegacyTheme ? '#F4F4F5' : theme.textColor,
   };
 
   const renderBlock = (block, index) => {
@@ -203,6 +194,7 @@ export default function RegistrationPage() {
       case BLOCK_TYPES.HERO:
         return (
           <section key={index} className="reg-block reg-hero">
+            <span className="reg-eyebrow">WEBINAR GRATUITO</span>
             <h1 className="reg-hero-title">{block.data?.title || webinar.title}</h1>
             <p className="reg-hero-subtitle">{block.data?.subtitle || webinar.description}</p>
             {block.data?.cta && (
@@ -291,7 +283,8 @@ export default function RegistrationPage() {
         return (
           <section key={index} id="reg-form" className="reg-block reg-form-section">
             <div className="reg-form-card">
-              <h2 className="reg-form-title">{t('registration.title')}</h2>
+              <span className="reg-form-kicker">INSCRIÇÃO GRATUITA</span>
+              <h2 className="reg-form-title">{block.data?.title || t('registration.title')}</h2>
 
               {error && <div className="auth-error">{error}</div>}
 
@@ -349,12 +342,16 @@ export default function RegistrationPage() {
                     <span className="spinner spinner-sm" />
                   ) : (
                     <>
-                      {loginConfig?.button_text || t('registration.registerButton')}
+                      {block.data?.buttonText || loginConfig?.button_text || t('registration.registerButton')}
                       <ArrowRight size={20} />
                     </>
                   )}
                 </button>
               </form>
+              <p className="reg-form-trust">
+                <ShieldCheck size={15} />
+                Seus dados estão seguros. Não enviamos spam.
+              </p>
             </div>
           </section>
         );
@@ -373,10 +370,21 @@ export default function RegistrationPage() {
 
   return (
     <div className="reg-page" style={customStyle}>
-      {loginConfig?.logo_url && (
-        <img src={loginConfig.logo_url} alt={webinar.title} className="reg-logo" />
-      )}
-      {blocks.map(renderBlock)}
+      <header className="reg-header">
+        <img
+          src={loginConfig?.logo_url || '/logo-dark.svg'}
+          alt={loginConfig?.logo_url ? webinar.title : 'GabLive'}
+          className="reg-logo"
+        />
+        <span>Evento online e gratuito</span>
+      </header>
+      <main className="reg-content">
+        {blocks.map(renderBlock)}
+      </main>
+      <footer className="reg-footer">
+        <img src="/logo-dark.svg" alt="GabLive" />
+        <span>© {new Date().getFullYear()} GabLive. Todos os direitos reservados.</span>
+      </footer>
     </div>
   );
 }

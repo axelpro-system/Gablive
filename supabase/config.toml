@@ -385,6 +385,20 @@ deno_version = 2
 [edge_runtime.secrets]
 RESEND_API_KEY = "env(RESEND_API_KEY)"
 EMAIL_FROM = "env(EMAIL_FROM)"
+EMAIL_FUNCTION_SECRET = "env(EMAIL_FUNCTION_SECRET)"
+
+# Cron invokes these with the service_role JWT (see vault + pg_cron setup).
+[functions.process-email-queue]
+verify_jwt = true
+
+[functions.schedule-reminders]
+verify_jwt = true
+
+[functions.send-email]
+verify_jwt = false
+
+[functions.resend-setup]
+verify_jwt = true
 
 [analytics]
 enabled = true

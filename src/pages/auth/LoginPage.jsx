@@ -37,7 +37,7 @@ export default function LoginPage() {
         <div className="auth-card">
           <div className="auth-header">
             <div className="auth-logo">
-              <div className="sidebar-logo-icon">W</div>
+              <img src="/gablive-logo.svg" alt="Gablive" className="auth-logo-img" />
             </div>
             <h1 className="auth-title">{t('auth.loginTitle')}</h1>
             <p className="auth-subtitle">{t('auth.loginSubtitle')}</p>
@@ -45,7 +45,7 @@ export default function LoginPage() {
 
           <form className="auth-form" onSubmit={handleSubmit}>
             {error && (
-              <div className="auth-error">
+              <div className="auth-error" role="alert">
                 {error}
               </div>
             )}
@@ -94,16 +94,16 @@ export default function LoginPage() {
                   type="button"
                   className="input-toggle-password"
                   onClick={() => setShowPassword(!showPassword)}
-                  tabIndex={-1}
+                  aria-label={showPassword ? t('auth.hidePassword') : t('auth.showPassword')}
                 >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  {showPassword ? <EyeOff size={18} aria-hidden="true" /> : <Eye size={18} aria-hidden="true" />}
                 </button>
               </div>
             </div>
 
             <button
               type="submit"
-              className="btn btn-black btn-lg auth-submit"
+              className="btn btn-primary btn-lg auth-submit"
               disabled={loading}
             >
               {loading ? (

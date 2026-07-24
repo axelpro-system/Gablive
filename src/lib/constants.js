@@ -47,6 +47,7 @@ export const ANALYTICS_EVENTS = {
   WATCH_60: 'watch_60',
   PITCH_REACHED: 'pitch_reached',
   OFFER_SHOWN: 'offer_shown',
+  LIKE: 'like',
 };
 
 // Marcos de assistência (minutos -> segundos) usados para disparar WATCH_15/30/45/60

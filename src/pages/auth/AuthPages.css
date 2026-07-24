@@ -33,10 +33,10 @@
   margin-bottom: var(--space-5);
 }
 
-.auth-logo .sidebar-logo-icon {
-  width: 48px;
-  height: 48px;
-  font-size: var(--text-xl);
+.auth-logo svg,
+.auth-logo-img {
+  max-width: 220px;
+  height: auto;
 }
 
 .auth-title {
@@ -159,14 +159,44 @@
 
 /* Responsive */
 @media (max-width: 480px) {
+  .auth-page {
+    padding: var(--space-3);
+    padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
+    align-items: flex-start;
+    padding-top: var(--space-10);
+  }
+
   .auth-form-row {
     grid-template-columns: 1fr;
   }
 
-  .auth-header,
-  .auth-form,
+  .auth-header {
+    padding: var(--space-6) var(--space-5) var(--space-3);
+  }
+
+  .auth-form {
+    padding: var(--space-3) var(--space-5) var(--space-5);
+    gap: var(--space-3);
+  }
+
   .auth-footer {
-    padding-left: var(--space-5);
-    padding-right: var(--space-5);
+    padding: var(--space-3) var(--space-5) var(--space-5);
+  }
+
+  .auth-title {
+    font-size: var(--text-xl);
+  }
+
+  .auth-logo-img {
+    max-width: 180px;
+  }
+
+  .auth-submit {
+    min-height: 48px;
+  }
+
+  .input-toggle-password {
+    min-width: 44px;
+    min-height: 44px;
   }
 }

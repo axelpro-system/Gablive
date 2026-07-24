@@ -8,6 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint .",
+    "test:unit": "node --test tests/unit/phase0-helpers.test.js",
     "test:e2e": "npx playwright test --config=tests/e2e/playwright.config.ts",
     "test:e2e:critical": "npx playwright test specs/critical --config=tests/e2e/playwright.config.ts --project=critical-flows",
     "test:e2e:ui": "npx playwright test --config=tests/e2e/playwright.config.ts --ui",

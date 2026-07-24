@@ -8,6 +8,19 @@ interface EmailPayload {
 }
 
 serve(async (req) => {
+  // Require shared secret — reject unauthenticated open calls from the browser.
+  const configuredSecret = Deno.env.get("EMAIL_FUNCTION_SECRET")
+  const provided =
+    req.headers.get("x-email-secret") ??
+    req.headers.get("X-Email-Secret")
+
+  if (!configuredSecret || provided !== configuredSecret) {
+    return new Response(
+      JSON.stringify({ success: false, error: "Unauthorized" }),
+      { status: 401, headers: { "Content-Type": "application/json" } },
+    )
+  }
+
   const resendApiKey = Deno.env.get("RESEND_API_KEY")
   if (!resendApiKey) {
     return new Response(
