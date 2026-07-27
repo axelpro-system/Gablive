@@ -370,6 +370,392 @@
   line-height: 1.7;
 }
 
+/* --- Pricing --- */
+.lp-pricing {
+  padding: var(--space-24) var(--space-6);
+  background: var(--color-white);
+}
+
+.lp-pricing__container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.lp-pricing__header {
+  text-align: center;
+  margin-bottom: var(--space-16);
+}
+
+.lp-pricing__title {
+  font-size: clamp(1.75rem, 3.5vw, 2.5rem);
+  font-weight: 800;
+  color: var(--color-gray-900);
+  margin-bottom: var(--space-4);
+  letter-spacing: -0.02em;
+}
+
+.lp-pricing__subtitle {
+  font-size: 1.125rem;
+  color: var(--color-gray-500);
+}
+
+.lp-pricing__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-6);
+  align-items: start;
+}
+
+.lp-pricing-card {
+  position: relative;
+  padding: var(--space-8);
+  background: var(--color-white);
+  border-radius: var(--radius-lg, 12px);
+  border: 1.5px solid var(--color-gray-200);
+  transition: transform 0.25s, box-shadow 0.25s;
+}
+
+.lp-pricing-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08);
+}
+
+.lp-pricing-card--popular {
+  border-color: var(--gablive-brand-red);
+  box-shadow: 0 8px 32px rgba(239, 43, 45, 0.12);
+}
+
+.lp-pricing-card__badge {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 16px;
+  background: var(--gablive-brand-red);
+  color: var(--color-white);
+  font-size: 0.75rem;
+  font-weight: 700;
+  border-radius: 100px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.lp-pricing-card__name {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-gray-900);
+  margin-bottom: var(--space-2);
+}
+
+.lp-pricing-card__desc {
+  font-size: 0.875rem;
+  color: var(--color-gray-500);
+  margin-bottom: var(--space-5);
+}
+
+.lp-pricing-card__price {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-1);
+  margin-bottom: var(--space-6);
+}
+
+.lp-pricing-card__amount {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--color-gray-900);
+  letter-spacing: -0.03em;
+}
+
+.lp-pricing-card__period {
+  font-size: 0.9375rem;
+  color: var(--color-gray-400);
+}
+
+.lp-pricing-card__features {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-bottom: var(--space-8);
+}
+
+.lp-pricing-card__features li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: 0.9375rem;
+  color: var(--color-gray-600);
+}
+
+.lp-pricing-card__features li svg {
+  color: var(--gablive-success, #12b76a);
+  flex-shrink: 0;
+}
+
+.lp-pricing-card__cta {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  text-align: center;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  border-radius: var(--radius-md, 8px);
+  text-decoration: none;
+  border: 1.5px solid var(--color-gray-300);
+  color: var(--color-gray-700);
+  background: var(--color-white);
+  transition: all 0.2s;
+}
+
+.lp-pricing-card__cta:hover {
+  border-color: var(--color-gray-400);
+  background: var(--color-gray-50);
+}
+
+.lp-pricing-card__cta--primary {
+  background: var(--gablive-brand-red);
+  color: var(--color-white);
+  border-color: var(--gablive-brand-red);
+}
+
+.lp-pricing-card__cta--primary:hover {
+  background: var(--color-primary-500);
+  border-color: var(--color-primary-500);
+}
+
+/* --- Testimonials --- */
+.lp-testimonials {
+  padding: var(--space-24) var(--space-6);
+  background: var(--color-gray-50);
+}
+
+.lp-testimonials__container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.lp-testimonials__header {
+  text-align: center;
+  margin-bottom: var(--space-16);
+}
+
+.lp-testimonials__title {
+  font-size: clamp(1.75rem, 3.5vw, 2.5rem);
+  font-weight: 800;
+  color: var(--color-gray-900);
+  margin-bottom: var(--space-4);
+  letter-spacing: -0.02em;
+}
+
+.lp-testimonials__subtitle {
+  font-size: 1.125rem;
+  color: var(--color-gray-500);
+}
+
+.lp-testimonials__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-6);
+}
+
+.lp-testimonial-card {
+  padding: var(--space-8);
+  background: var(--color-white);
+  border-radius: var(--radius-lg, 12px);
+  border: 1px solid var(--color-gray-200);
+  display: flex;
+  flex-direction: column;
+}
+
+.lp-testimonial-card__stars {
+  display: flex;
+  gap: 2px;
+  margin-bottom: var(--space-5);
+}
+
+.lp-testimonial-card__text {
+  font-size: 1rem;
+  color: var(--color-gray-700);
+  line-height: 1.7;
+  flex: 1;
+  margin-bottom: var(--space-6);
+}
+
+.lp-testimonial-card__author {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.lp-testimonial-card__avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--color-primary-50);
+  color: var(--gablive-brand-red);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.lp-testimonial-card__name {
+  display: block;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--color-gray-900);
+}
+
+.lp-testimonial-card__role {
+  display: block;
+  font-size: 0.8125rem;
+  color: var(--color-gray-400);
+}
+
+/* --- CTA Final --- */
+.lp-cta {
+  padding: var(--space-24) var(--space-6);
+  background: var(--gablive-brand-red);
+  text-align: center;
+}
+
+.lp-cta__container {
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.lp-cta__title {
+  font-size: clamp(1.75rem, 3.5vw, 2.5rem);
+  font-weight: 800;
+  color: var(--color-white);
+  margin-bottom: var(--space-4);
+  letter-spacing: -0.02em;
+}
+
+.lp-cta__subtitle {
+  font-size: 1.125rem;
+  color: rgba(255, 255, 255, 0.85);
+  margin-bottom: var(--space-8);
+}
+
+.lp-cta__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 16px 32px;
+  background: var(--color-white);
+  color: var(--gablive-brand-red);
+  border: none;
+  border-radius: var(--radius-md, 8px);
+  font-size: 1.125rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.lp-cta__btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.lp-cta__note {
+  display: block;
+  margin-top: var(--space-4);
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* --- Footer --- */
+.lp-footer {
+  padding: var(--space-16) var(--space-6) var(--space-8);
+  background: var(--color-gray-900);
+  color: var(--color-gray-400);
+}
+
+.lp-footer__container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.lp-footer__grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: var(--space-10);
+  margin-bottom: var(--space-12);
+}
+
+.lp-footer__logo {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-white);
+  text-decoration: none;
+}
+
+.lp-footer__logo span {
+  color: var(--gablive-brand-red);
+}
+
+.lp-footer__tagline {
+  margin-top: var(--space-3);
+  font-size: 0.9375rem;
+  color: var(--color-gray-400);
+  line-height: 1.6;
+}
+
+.lp-footer__col h4 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-white);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: var(--space-4);
+}
+
+.lp-footer__col ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.lp-footer__col a {
+  color: var(--color-gray-400);
+  text-decoration: none;
+  font-size: 0.9375rem;
+  transition: color 0.2s;
+}
+
+.lp-footer__col a:hover {
+  color: var(--color-white);
+}
+
+.lp-footer__bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: var(--space-8);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 0.8125rem;
+  color: var(--color-gray-500);
+}
+
+.lp-footer__social {
+  display: flex;
+  gap: var(--space-4);
+}
+
+.lp-footer__social a {
+  color: var(--color-gray-400);
+  transition: color 0.2s;
+}
+
+.lp-footer__social a:hover {
+  color: var(--color-white);
+}
+
 /* --- Animations --- */
 @keyframes lp-fade-in-up {
   from {
@@ -406,6 +792,23 @@
 
   .lp-features__grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .lp-pricing__grid {
+    grid-template-columns: 1fr;
+    max-width: 420px;
+    margin: 0 auto;
+  }
+
+  .lp-testimonials__grid {
+    grid-template-columns: 1fr;
+    max-width: 520px;
+    margin: 0 auto;
+  }
+
+  .lp-footer__grid {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-8);
   }
 }
 
@@ -444,6 +847,29 @@
 
   .lp-features__grid {
     grid-template-columns: 1fr;
+  }
+
+  .lp-pricing {
+    padding: var(--space-16) var(--space-5);
+  }
+
+  .lp-testimonials {
+    padding: var(--space-16) var(--space-5);
+  }
+
+  .lp-cta {
+    padding: var(--space-16) var(--space-5);
+  }
+
+  .lp-footer__grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+
+  .lp-footer__bottom {
+    flex-direction: column;
+    gap: var(--space-4);
+    text-align: center;
   }
 }
 
