@@ -85,13 +85,18 @@ serve(async (_req) => {
         `Queue ${item.id}: missing app_base_url or slug (base=${base}, slug=${slug})`,
       )
     }
+    // Token de acesso cross-device: o link do e-mail carrega o registration_id
+    // como ?reg=<id>, para a sala de espera/sala funcionarem em outro aparelho
+    // (sem localStorage). Consumido por WaitRoomPage/useRegistration.
+    const regId = item.registration_id as string | undefined
+    const regQ = regId ? `?reg=${regId}` : ""
     const vars = {
       name,
       email,
       webinar_title: webinarTitle,
-      wait_url: base && slug ? `${base}/wait/${slug}` : base || "",
-      room_url: base && slug ? `${base}/room/${slug}` : base || "",
-      replay_url: base && slug ? `${base}/replay/${slug}` : base || "",
+      wait_url: base && slug ? `${base}/wait/${slug}${regQ}` : base || "",
+      room_url: base && slug ? `${base}/room/${slug}${regQ}` : base || "",
+      replay_url: base && slug ? `${base}/replay/${slug}${regQ}` : base || "",
     }
 
     if (!to) {

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../../lib/supabase';
 import { useCountdown } from '../../hooks/useCountdown';
@@ -11,6 +11,8 @@ export default function WaitRoomPage() {
   const { slug } = useParams();
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const regParam = searchParams.get('reg');
 
   const [webinar, setWebinar] = useState(null);
   const [registration, setRegistration] = useState(null);
@@ -28,7 +30,10 @@ export default function WaitRoomPage() {
 
       if (data) {
         setWebinar(data);
-        const regId = localStorage.getItem(`webinar-reg-${data.id}`);
+        // Token de acesso: ?reg=<id> na URL (link de e-mail, cross-device),
+        // com fallback pro localStorage (mesmo aparelho). Persiste o da URL.
+        if (regParam) localStorage.setItem(`webinar-reg-${data.id}`, regParam);
+        const regId = regParam || localStorage.getItem(`webinar-reg-${data.id}`);
         if (regId) {
           const { data: regRows } = await supabase.rpc('get_registration_by_id', {
             p_id: regId,
@@ -43,7 +48,7 @@ export default function WaitRoomPage() {
       setLoading(false);
     };
     fetch();
-  }, [slug, navigate]);
+  }, [slug, navigate, regParam]);
 
   const target = webinar?.is_just_in_time ? registration?.session_start_at : webinar?.scheduled_at;
   const countdown = useCountdown(target);

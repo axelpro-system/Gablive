@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { ANALYTICS_EVENTS } from '../lib/constants';
 
 /**
@@ -11,6 +12,8 @@ import { ANALYTICS_EVENTS } from '../lib/constants';
  * @returns {{ webinar: object|null, registration: object|null, loading: boolean }}
  */
 export function useRegistration(slug, supabase, trackEvent) {
+  const [searchParams] = useSearchParams();
+  const regParam = searchParams.get('reg');
   const [webinar, setWebinar] = useState(null);
   const [registration, setRegistration] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -27,8 +30,10 @@ export function useRegistration(slug, supabase, trackEvent) {
       if (data) {
         setWebinar(data);
 
-        // Check registration from localStorage
-        const regId = localStorage.getItem(`webinar-reg-${data.id}`);
+        // Token de acesso: ?reg=<id> na URL (link de e-mail, cross-device),
+        // com fallback pro localStorage (mesmo aparelho). Persiste o da URL.
+        if (regParam) localStorage.setItem(`webinar-reg-${data.id}`, regParam);
+        const regId = regParam || localStorage.getItem(`webinar-reg-${data.id}`);
         if (regId) {
           const { data: regRows } = await supabase.rpc('get_registration_by_id', {
             p_id: regId,
@@ -53,7 +58,7 @@ export function useRegistration(slug, supabase, trackEvent) {
     };
 
     fetchWebinar();
-  }, [slug, supabase, trackEvent]);
+  }, [slug, supabase, trackEvent, regParam]);
 
   return { webinar, registration, loading };
 }
