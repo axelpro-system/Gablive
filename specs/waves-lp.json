@@ -1,0 +1,72 @@
+{
+  "project": "Landing Page Gablive",
+  "description": "Landing page principal do produto: hero, features, pricing, depoimentos, CTA, footer. SPA React com CSS custom properties.",
+  "waves": [
+    {
+      "number": 1,
+      "name": "Estrutura e Hero",
+      "description": "Componentes base e hero section. Tasks independentes.",
+      "issues": [
+        {
+          "title": "Criar página LandingPage.jsx com estrutura base",
+          "body": "## Contexto\n\nCriar a página principal de landing page do Gablive. Esta é a primeira coisa que visitantes veem — precisa ser impactante e converter.\n\n## Critérios de Aceite\n\n- [ ] Criar `src/pages/public/LandingPage.jsx`\n- [ ] Criar `src/pages/public/LandingPage.css`\n- [ ] Estrutura de seções: Hero, Features, Pricing, Testimonials, CTA, Footer\n- [ ] Usar CSS custom properties do design system (`--color-primary-*`, `--color-gray-*`, `--radius-*`, `--space-*`)\n- [ ] Layout responsivo (mobile-first)\n- [ ] Scroll suave entre seções (anchor links)\n- [ ] Navbar com logo, links e CTA \"Começar Agora\"\n\n## Arquivos Afetados\n\n- `src/pages/public/LandingPage.jsx` (novo)\n- `src/pages/public/LandingPage.css` (novo)\n\n## Notas Técnicas\n\n- Usar Lucide React para ícones\n- Seguir design system em `specs/DESIGN-SYSTEM.md`\n- Fonte: Inter (já configurada no projeto)\n- Brand red: `--gablive-brand-red: #ef2b2d`\n- Não usar framework CSS — apenas custom properties",
+          "labels": ["wave-1", "frontend", "lp"]
+        },
+        {
+          "title": "Hero section da LP",
+          "body": "## Contexto\n\nHero section é o primeiro visível. Precisa comunicar valor em 5 segundos e ter CTA claro.\n\n## Critérios de Aceite\n\n- [ ] Headline principal: \"Converta mais com webinários ao vivo\"\n- [ ] Sub-headline explicando o produto\n- [ ] 2 CTAs: \"Começar Grátis\" (primário) e \"Ver Demo\" (secundário)\n- [ ] Background gradiente ou cor sólida do brand\n- [ ] Mockup/screenshot do produto (placeholder)\n- [ ] Animação sutil de entrada (CSS only)\n- [ ] Responsivo: stack no mobile\n\n## Dependências\n\nNenhuma (Wave 1)\n\n## Arquivos Afetados\n\n- `src/pages/public/LandingPage.jsx` (componente Hero inline ou separado)\n- `src/pages/public/LandingPage.css` (estilos do Hero)\n\n## Notas Técnicas\n\n- Hero deve ocupar 100vh no desktop\n- Usar `--color-primary-500` para CTA primário\n- Texto branco sobre fundo escuro ou brand red\n- Mockup pode ser placeholder cinza com borda",
+          "labels": ["wave-1", "frontend", "lp", "ui"]
+        },
+        {
+          "title": "Features section da LP",
+          "body": "## Contexto\n\nSeção de features mostra os principais benefícios do produto. Precisa ser visual e fácil de escanear.\n\n## Critérios de Aceite\n\n- [ ] Grid de 6 features principais\n- [ ] Cada feature: ícone Lucide + título + descrição curta\n- [ ] Features: Webinários ao vivo, Just-in-Time, Chat ao vivo, CTAs inteligentes, Analytics, Multi-tenant\n- [ ] Layout: 3 colunas desktop, 2 tablet, 1 mobile\n- [ ] Hover state nos cards\n- [ ] Título da seção: \"Tudo que você precisa para converter\"\n\n## Dependências\n\nNenhuma (Wave 1)\n\n## Arquivos Afetados\n\n- `src/pages/public/LandingPage.jsx` (seção Features)\n- `src/pages/public/LandingPage.css` (estilos dos cards)\n\n## Notas Técnicas\n\n- Ícones: Video, Zap, MessageCircle, Target, BarChart3, Building2\n- Cards com `--radius-lg` e `--shadow-sm`\n- Background: `--color-gray-50` ou branco\n- Espaçamento entre seções: `--space-24`",
+          "labels": ["wave-1", "frontend", "lp", "ui"]
+        }
+      ]
+    },
+    {
+      "number": 2,
+      "name": "Conteúdo e Conversão",
+      "description": "Seções de conteúdo que constroem confiança e convertem. Depende da Wave 1.",
+      "issues": [
+        {
+          "title": "Pricing section da LP",
+          "body": "## Contexto\n\nSeção de pricing mostra os planos disponíveis. Precisa ser clara e guiar o usuário para o plano certo.\n\n## Critérios de Aceite\n\n- [ ] 3 planos: Starter, Pro, Enterprise\n- [ ] Cards com preço, features listadas, CTA\n- [ ] Destaque visual no plano \"Pro\" (mais popular)\n- [ ] Toggle mensal/annual com desconto\n- [ ] Features: limites de webinários, participantes, storage, suporte\n- [ ] CTA: \"Começar Agora\" em todos os planos\n\n## Dependências\n\n- #1 (Estrutura base) — Wave 1\n\n## Arquivos Afetados\n\n- `src/pages/public/LandingPage.jsx` (seção Pricing)\n- `src/pages/public/LandingPage.css` (estilos dos cards de pricing)\n\n## Notas Técnicas\n\n- Preços placeholder (serão definidos depois)\n- Plano Pro com borda `--color-primary-500` e badge \"Mais Popular\"\n- Background: branco ou `--color-gray-50`\n- Toggle: switch customizado com CSS",
+          "labels": ["wave-2", "frontend", "lp", "pricing"]
+        },
+        {
+          "title": "Testimonials section da LP",
+          "body": "## Contexto\n\nDepoimentos constroem confiança social. Precisa parecer autêntico.\n\n## Critérios de Aceite\n\n- [ ] 3-4 depoimentos com foto, nome, empresa, cargo\n- [ ] Layout: carousel ou grid\n- [ ] Aspas visuais (\" ou svg)\n- [ ] Nomes e empresas placeholder realistas\n- [ ] Avaliação visual (estrelas ou similar)\n- [ ] Título: \"Criadores que já convertem com o Gablive\"\n\n## Dependências\n\n- #1 (Estrutura base) — Wave 1\n\n## Arquivos Afetados\n\n- `src/pages/public/LandingPage.jsx` (seção Testimonials)\n- `src/pages/public/LandingPage.css` (estilos dos depoimentos)\n\n## Notas Técnicas\n- Dados hardcoded (não precisa de API)\n- Fotos: placeholder com iniciais ou UI Avatars\n- Background: `--color-gray-50`\n- Se carousel: CSS scroll-snap (sem lib extra)",
+          "labels": ["wave-2", "frontend", "lp", "social-proof"]
+        },
+        {
+          "title": "CTA final e Footer da LP",
+          "body": "## Contexto\n\nCTA final é a última chance de converter. Footer dá credibilidade e links úteis.\n\n## Critérios de Aceite\n\n**CTA Final:**\n- [ ] Seção com fundo brand red\n- [ ] Headline: \"Pronto para converter?\"\n- [ ] Sub-texto motivacional\n- [ ] CTA grande: \"Comece Grátis Agora\"\n- [ ] Nota: \"Sem cartão de crédito necessário\"\n\n**Footer:**\n- [ ] Logo Gablive\n- [ ] Links: Produto, Recursos, Empresa, Legal\n- [ ] Redes sociais (placeholder)\n- [ ] Copyright: \"© 2026 Gablive. Todos os direitos reservados.\"\n- [ ] Layout: 4 colunas desktop, stack mobile\n\n## Dependências\n\n- #1 (Estrutura base) — Wave 1\n\n## Arquivos Afetados\n\n- `src/pages/public/LandingPage.jsx` (CTA + Footer)\n- `src/pages/public/LandingPage.css` (estilos)\n\n## Notas Técnicas\n- CTA com gradiente ou cor sólida `--color-primary-500`\n- Footer background: `--color-gray-900` com texto claro\n- Links: placeholder com `#`\n- Responsivo: footer 2 colunas no tablet, 1 no mobile",
+          "labels": ["wave-2", "frontend", "lp", "conversion"]
+        }
+      ]
+    },
+    {
+      "number": 3,
+      "name": "Integração e Polish",
+      "description": "Integrar no app, responsividade, animações. Depende da Wave 2.",
+      "issues": [
+        {
+          "title": "Integrar LandingPage no router",
+          "body": "## Contexto\n\nA LP precisa estar acessível em `/` (homepage) do app.\n\n## Critérios de Aceite\n\n- [ ] Rota `/` renderiza LandingPage\n- [ ] Rota existente `/` (se houver) redireciona ou é substituída\n- [ ] SEO: título da página \"Gablive - Plataforma de Webinários\"\n- [ ] Meta description configurada\n- [ ] Favicon funciona\n\n## Dependências\n\n- #1 (Estrutura base) — Wave 1\n- #2 (Hero) — Wave 1\n- #3 (Features) — Wave 1\n- #4 (Pricing) — Wave 2\n- #5 (Testimonials) — Wave 2\n- #6 (CTA + Footer) — Wave 2\n\n## Arquivos Afetados\n\n- `src/App.jsx` ou `src/routes.jsx` (adicionar rota)\n- `index.html` (meta tags)\n\n## Notas Técnicas\n\n- Verificar se já existe rota `/` e ajustar\n- Usar React Router 7 patterns\n- Meta tags: viewport, og:image, twitter:card",
+          "labels": ["wave-3", "frontend", "integration"]
+        },
+        {
+          "title": "Animações CSS e polish visual",
+          "body": "## Contexto\n\nAdicionar animações sutis que tornam a LP mais profissional e engaging.\n\n## Critérios de Aceite\n\n- [ ] Fade-in ao scroll (Intersection Observer)\n- [ ] Hero: animação de entrada do texto\n- [ ] Features: stagger animation nos cards\n- [ ] CTA: pulse sutil no botão\n- [ ] Transições suaves nos hovers\n- [ ] Smooth scroll entre seções\n- [ ] Performance: sem layout shift\n\n## Dependências\n\n- #7 (Integração no router) — Wave 3\n\n## Arquivos Afetados\n\n- `src/pages/public/LandingPage.jsx` (adicionar observers)\n- `src/pages/public/LandingPage.css` (keyframes e transitions)\n\n## Notas Técnicas\n\n- Usar CSS only quando possível\n- Intersection Observer para scroll animations\n- `prefers-reduced-motion` para acessibilidade\n- Não usar libs de animação externas\n- Manter 60fps",
+          "labels": ["wave-3", "frontend", "lp", "animation"]
+        },
+        {
+          "title": "Testes E2E da LP",
+          "body": "## Contexto\n\nVerificar que a LP funciona em todos os devices e que as features estão presentes.\n\n## Critérios de Aceite\n\n- [ ] Teste: página carrega em `/`\n- [ ] Teste: hero visível com CTA\n- [ ] Teste: 6 features visíveis\n- [ ] Teste: 3 planos de pricing\n- [ ] Teste: 3 depoimentos\n- [ ] Teste: CTA final visível\n- [ ] Teste: footer com links\n- [ ] Teste: responsivo (mobile viewport)\n- [ ] Teste: scroll suave funciona\n\n## Dependências\n\n- #7 (Integração no router) — Wave 3\n- #8 (Animações) — Wave 3\n\n## Arquivos Afetados\n\n- `tests/e2e/landing-page.spec.js` (novo)\n\n## Notas Técnicas\n\n- Usar Playwright ou test runner existente\n- Testar em viewport mobile e desktop\n- Verificar que não há erros no console",
+          "labels": ["wave-3", "testing", "e2e"]
+        }
+      ]
+    }
+  ]
+}

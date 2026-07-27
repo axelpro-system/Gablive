@@ -1,0 +1,84 @@
+{
+  "project": "Gablive v2 - AI Agents & Chat",
+  "description": "Sistema completo de agente de IA para webinários: chat agent, Q&A inteligente, geração de chat simulado, e configuração de providers.",
+  "waves": [
+    {
+      "number": 1,
+      "name": "Infraestrutura de IA",
+      "description": "Base para todos os providers de IA. Tasks independentes.",
+      "issues": [
+        {
+          "title": "AiProvider interface + registry",
+          "body": "## Contexto\nCriar interface abstrata AiProvider que todos os providers (OpenAI, Gemini, etc) devem implementar. Incluir registry para gerenciar providers disponíveis.\n\n## Critérios de Aceite\n- [ ] Interface AiProvider com método generateContent()\n- [ ] Registry com registerProvider() e getProvider()\n- [ ] OpenAI adapter implementando AiProvider\n- [ ] Gemini adapter refatorado para AiProvider\n- [ ] Edge Function list-available-providers retornando providers registrados\n\n## Dependências\nNenhuma (Wave 1)\n\n## Arquivos Afetados\n- supabase/functions/_shared/ai-provider.ts (novo)\n- supabase/functions/_shared/openai.ts (novo)\n- supabase/functions/_shared/gemini.ts (refatorar)\n- supabase/functions/list-available-providers/index.ts (novo)\n\n## Notas Técnicas\n- Seguir padrão adapter/factory\n- Providers registrados: openai, gemini\n- API key decrypt via Supabase vault",
+          "labels": ["wave-1", "backend", "ai"]
+        },
+        {
+          "title": "Migration 010 - AI chat agent columns",
+          "body": "## Contexto\nAdicionar colunas para chat agent na tabela de configuração de IA do webinar, e estender qa_answer_log para tracking.\n\n## Critérios de Aceite\n- [ ] Coluna chat_agent_enabled (boolean, default false)\n- [ ] Colunas extras em qa_answer_log (model, provider, tokens_used, latency_ms)\n- [ ] RLS policies para novas colunas\n- [ ] Migration testada localmente\n\n## Dependências\nNenhuma (Wave 1)\n\n## Arquivos Afetados\n- supabase/migrations/010_ai_chat_agent.sql (novo)\n\n## Notas Técnicas\n- Migration aditiva, não destrutiva\n- Incluir rollback comments\n- Testar com psql local",
+          "labels": ["wave-1", "database", "migration"]
+        }
+      ]
+    },
+    {
+      "number": 2,
+      "name": "Edge Functions de IA",
+      "description": "Edge Functions que usam a infraestrutura da Wave 1. Depende de Wave 1.",
+      "issues": [
+        {
+          "title": "chat-agent Edge Function",
+          "body": "## Contexto\nEdge Function pública que recebe mensagem do participante, busca configuração de IA do webinar, decrypta API key, chama provider de IA, e retorna resposta.\n\n## Critérios de Aceite\n- [ ] Recebe {webinar_id, message, history}\n- [ ] Busca ai_config do webinar\n- [ ] Verifica chat_agent_enabled\n- [ ] Decrypta API key via vault\n- [ ] Chama getAiProvider() factory\n- [ ] Retorna resposta formatada\n- [ ] Handle errors gracefully (not configured, rate limit, etc)\n\n## Dependências\n- #1 (AiProvider interface) - Wave 1\n- #2 (Migration 010) - Wave 1\n\n## Arquivos Afetados\n- supabase/functions/chat-agent/index.ts (novo)\n\n## Notas Técnicas\n- Usar getAiProvider() do _shared/ai-provider.ts\n- Timeout de 30s para resposta da IA\n- Log de uso em qa_answer_log",
+          "labels": ["wave-2", "backend", "ai"]
+        },
+        {
+          "title": "generate-chat Edge Function",
+          "body": "## Contexto\nEdge Function auth-only que gera N mensagens de chat simulado realistas via IA, parse JSON, e insere na tabela simulated_messages com timestamps espaçados.\n\n## Critérios de Aceite\n- [ ] Recebe {webinar_id, count, context}\n- [ ] Gera mensagens via AI provider\n- [ ] Parse JSON response\n- [ ] Insert em simulated_messages\n- [ ] Timestamps evenly spaced\n- [ ] Validação de auth (service_role)\n\n## Dependências\n- #1 (AiProvider interface) - Wave 1\n\n## Arquivos Afetados\n- supabase/functions/generate-chat/index.ts (novo)\n\n## Notas Técnicas\n- Prompt engineering para mensagens realistas\n- Validar JSON antes de insert\n- Respeitar schema de simulated_messages",
+          "labels": ["wave-2", "backend", "ai"]
+        },
+        {
+          "title": "save-ai-config Edge Function",
+          "body": "## Contexto\nEdge Function que salva configuração completa de IA do webinar: provider, model, API key, system prompt, e chat_agent_enabled.\n\n## Critérios de Aceite\n- [ ] Recebe {webinar_id, provider, model, api_key, system_prompt, chat_agent_enabled}\n- [ ] Encrypta API key via vault\n- [ ] Upsert em ai_configs\n- [ ] Validação de auth e tenant isolation\n- [ ] Retorna config salva (sem API key)\n\n## Dependências\n- #2 (Migration 010) - Wave 1\n\n## Arquivos Afetados\n- supabase/functions/save-ai-config/index.ts (novo ou refatorar)\n\n## Notas Técnicas\n- Usar Supabase vault para API key\n- Validar provider existe no registry\n- RLS: apenas owner do webinar",
+          "labels": ["wave-2", "backend", "ai"]
+        }
+      ]
+    },
+    {
+      "number": 3,
+      "name": "UI de Configuração",
+      "description": "Componentes React para configurar AI agent. Depende de Wave 2.",
+      "issues": [
+        {
+          "title": "AIAgentEditor component",
+          "body": "## Contexto\nComponente React para configurar AI agent do webinar: selecionar provider, model, API key, system prompt, e toggle chat_agent_enabled.\n\n## Critérios de Aceite\n- [ ] Dropdown de providers (fetch de list-available-providers)\n- [ ] Dropdown de models (switch por provider)\n- [ ] Input de API key (password field)\n- [ ] Textarea de system prompt\n- [ ] Toggle chat_agent_enabled\n- [ ] Salva via save-ai-config\n- [ ] Loading states e error handling\n- [ ] Design system compliant (CSS custom properties)\n\n## Dependências\n- #3 (chat-agent EF) - Wave 2\n- #5 (save-ai-config EF) - Wave 2\n\n## Arquivos Afetados\n- src/components/editor/AIAgentEditor.jsx (novo)\n- src/components/editor/AIAgentEditor.css (novo)\n\n## Notas Técnicas\n- Usar design system (--color-primary-*, --radius-*, etc)\n- Fetch providers on mount\n- Models list switches per provider\n- API key nunca exibida depois de salva",
+          "labels": ["wave-3", "frontend", "ui"]
+        },
+        {
+          "title": "ChatAgent floating component",
+          "body": "## Contexto\nComponente React de chat flutuante que aparece na sala do webinar quando chat_agent_enabled=true. Bubble no canto inferior direito, painel com histórico de mensagens.\n\n## Critérios de Aceite\n- [ ] Floating bubble bottom-right\n- [ ] Click abre painel de chat\n- [ ] Envia mensagem para chat-agent EF\n- [ ] Exibe histórico de mensagens\n- [ ] Loading state durante resposta\n- [ ] Error handling (not configured, network error)\n- [ ] Responsivo (mobile-friendly)\n- [ ] Design system compliant\n\n## Dependências\n- #3 (chat-agent EF) - Wave 2\n\n## Arquivos Afetados\n- src/components/room/ChatAgent.jsx (novo)\n- src/components/room/ChatAgent.css (novo)\n- src/pages/public/WebinarRoomPage.jsx (integrar)\n\n## Notas Técnicas\n- Integrar em WebinarRoomPage\n- Verificar chat_agent_enabled antes de renderizar\n- Histórico em estado local (não persistir)\n- Animação de entrada/saída do painel",
+          "labels": ["wave-3", "frontend", "ui"]
+        }
+      ]
+    },
+    {
+      "number": 4,
+      "name": "Integração Final",
+      "description": "Integrar tudo no dashboard e testar end-to-end. Depende de Wave 3.",
+      "issues": [
+        {
+          "title": "Integrar AI Agent tab no EditWebinarPage",
+          "body": "## Contexto\nAdicionar tab 'AI Agent' no editor de webinar que renderiza AIAgentEditor. Link na tab de Chat para configurar chat_agent_enabled.\n\n## Critérios de Aceite\n- [ ] Tab 'AI Agent' visível no EditWebinarPage\n- [ ] Renderiza AIAgentEditor\n- [ ] Passa webinar_id como prop\n- [ ] Link na tab Chat para AI Agent editor\n- [ ] Breadcrumb/navigation funcional\n\n## Dependências\n- #6 (AIAgentEditor) - Wave 3\n\n## Arquivos Afetados\n- src/pages/dashboard/EditWebinarPage.jsx (modificar)\n\n## Notas Técnicas\n- Tab já existe no wizard, só adicionar render\n- Usar ícone Lucide (Bot ou Sparkles)",
+          "labels": ["wave-4", "frontend", "integration"]
+        },
+        {
+          "title": "Chat tab toggle no InteractionsEditor",
+          "body": "## Contexto\nNa tab de interações do editor, adicionar toggle para chat_agent_enabled com link para AI Agent editor quando desabilitado.\n\n## Critérios de Aceite\n- [ ] Toggle 'Chat com IA' visível\n- [ ] Quando off: mostra link 'Configurar AI Agent'\n- [ ] Quando on: mostra status 'Ativo'\n- [ ] Salva via save-ai-config\n\n## Dependências\n- #6 (AIAgentEditor) - Wave 3\n\n## Arquivos Afetados\n- src/components/editor/InteractionsEditor.jsx (modificar)\n\n## Notas Técnicas\n- Toggle simples (checkbox ou switch)\n- Link navega para tab 'ia' do EditWebinarPage",
+          "labels": ["wave-4", "frontend", "integration"]
+        },
+        {
+          "title": "Testes E2E do fluxo completo",
+          "body": "## Contexto\nTestar fluxo completo: configurar AI agent → ativar chat → enviar mensagem → receber resposta.\n\n## Critérios de Aceite\n- [ ] Configurar provider e model funciona\n- [ ] Salvar API key funciona\n- [ ] Toggle chat_agent_enabled funciona\n- [ ] Chat bubble aparece na sala\n- [ ] Enviar mensagem retorna resposta\n- [ ] Error handling funciona (API key inválida, etc)\n\n## Dependências\n- #7 (ChatAgent component) - Wave 3\n- #8 (EditWebinarPage integration) - Wave 4\n- #9 (InteractionsEditor toggle) - Wave 4\n\n## Arquivos Afetados\n- tests/e2e/ai-agent.spec.js (novo)\n\n## Notas Técnicas\n- Testar com provider real (OpenAI ou Gemini)\n- Testar error scenarios\n- Validar RLS isolation",
+          "labels": ["wave-4", "testing", "e2e"]
+        }
+      ]
+    }
+  ]
+}
