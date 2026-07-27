@@ -18,11 +18,9 @@ export default function ReplayPage() {
 
   useEffect(() => {
     const fetch = async () => {
-      const { data } = await supabase
-        .from('webinars')
-        .select('*')
-        .eq('slug', slug)
-        .single();
+      const { data } = await supabase.rpc('get_public_webinar_by_slug', {
+        p_slug: slug,
+      });
 
       if (data) {
         setWebinar(data);

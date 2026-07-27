@@ -109,11 +109,9 @@ export function useSimulatedChat(webinarId, currentTimeSeconds) {
     if (!webinarId) return;
 
     const fetchMessages = async () => {
-      const { data } = await supabase
-        .from('simulated_messages')
-        .select('*')
-        .eq('webinar_id', webinarId)
-        .order('timestamp_seconds', { ascending: true });
+      const { data } = await supabase.rpc('get_public_simulated_messages', {
+        p_webinar_id: webinarId,
+      });
 
       setAllMessages(data || []);
       setLoading(false);

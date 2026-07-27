@@ -55,6 +55,8 @@
     "emailPlaceholder": "you@email.com",
     "passwordLabel": "Password",
     "passwordPlaceholder": "Your password",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
     "confirmPasswordLabel": "Confirm password",
     "confirmPasswordPlaceholder": "Confirm your password",
     "nameLabel": "Full name",
@@ -72,7 +74,24 @@
     "loginError": "Invalid email or password",
     "registerError": "Error creating account. Please try again.",
     "resetEmailSent": "Reset email sent!",
-    "passwordMismatch": "Passwords do not match"
+    "passwordMismatch": "Passwords do not match",
+    "backToLogin": "Back to login",
+    "rememberedPassword": "Remembered your password?",
+    "sendResetLink": "Send reset link",
+    "resetError": "Could not send the email. Check the address and try again.",
+    "resetPasswordTitle": "Set a new password",
+    "resetPasswordSubtitle": "Choose a new password for your account",
+    "newPasswordLabel": "New password",
+    "newPasswordPlaceholder": "Enter your new password",
+    "updatePassword": "Update password",
+    "passwordUpdated": "Password updated successfully!",
+    "passwordUpdatedSubtitle": "You can now log in with your new password.",
+    "updatePasswordError": "Could not update the password. The link may have expired — request a new one.",
+    "checkEmailTitle": "Confirm your email",
+    "checkEmailSubtitle": "We sent a confirmation link to {{email}}. Click it to activate your account and log in.",
+    "resetLinkInvalidTitle": "Invalid or expired link",
+    "resetLinkInvalidText": "This reset link is no longer valid. Request a new one to continue.",
+    "requestNewLink": "Request a new link"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -203,7 +222,8 @@
     "pollResponses": "Poll responses",
     "exportCsv": "Export CSV",
     "selectWebinars": "Select webinars to compare",
-    "noData": "No data to display"
+    "noData": "No data to display",
+    "loadError": "Could not load the reports. Please try again in a moment."
   },
   "email": {
     "title": "Email configuration",

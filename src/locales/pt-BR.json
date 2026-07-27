@@ -55,6 +55,8 @@
     "emailPlaceholder": "seu@email.com",
     "passwordLabel": "Senha",
     "passwordPlaceholder": "Sua senha",
+    "showPassword": "Mostrar senha",
+    "hidePassword": "Ocultar senha",
     "confirmPasswordLabel": "Confirmar senha",
     "confirmPasswordPlaceholder": "Confirme sua senha",
     "nameLabel": "Nome completo",
@@ -72,7 +74,24 @@
     "loginError": "E-mail ou senha inválidos",
     "registerError": "Erro ao criar conta. Tente novamente.",
     "resetEmailSent": "E-mail de redefinição enviado!",
-    "passwordMismatch": "As senhas não coincidem"
+    "passwordMismatch": "As senhas não coincidem",
+    "backToLogin": "Voltar para o login",
+    "rememberedPassword": "Lembrou a senha?",
+    "sendResetLink": "Enviar link de redefinição",
+    "resetError": "Não foi possível enviar o e-mail. Verifique o endereço e tente novamente.",
+    "resetPasswordTitle": "Definir nova senha",
+    "resetPasswordSubtitle": "Escolha uma nova senha para sua conta",
+    "newPasswordLabel": "Nova senha",
+    "newPasswordPlaceholder": "Digite a nova senha",
+    "updatePassword": "Atualizar senha",
+    "passwordUpdated": "Senha atualizada com sucesso!",
+    "passwordUpdatedSubtitle": "Você já pode entrar com sua nova senha.",
+    "updatePasswordError": "Não foi possível atualizar a senha. O link pode ter expirado — solicite um novo.",
+    "checkEmailTitle": "Confirme seu e-mail",
+    "checkEmailSubtitle": "Enviamos um link de confirmação para {{email}}. Clique nele para ativar sua conta e entrar.",
+    "resetLinkInvalidTitle": "Link inválido ou expirado",
+    "resetLinkInvalidText": "Este link de redefinição não é mais válido. Solicite um novo para continuar.",
+    "requestNewLink": "Solicitar novo link"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -203,7 +222,8 @@
     "pollResponses": "Respostas nas enquetes",
     "exportCsv": "Exportar CSV",
     "selectWebinars": "Selecionar webinários para comparar",
-    "noData": "Sem dados para exibir"
+    "noData": "Sem dados para exibir",
+    "loadError": "Não foi possível carregar os relatórios. Tente novamente em alguns instantes."
   },
   "email": {
     "title": "Configuração de e-mails",

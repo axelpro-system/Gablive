@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { AUDIENCE_MODE, ANALYTICS_EVENTS } from '../lib/constants';
+import { ANALYTICS_EVENTS } from '../lib/constants';
 
 /**
  * Busca os dados do webinário e do registro do participante.
@@ -17,18 +17,12 @@ export function useRegistration(slug, supabase, trackEvent) {
 
   useEffect(() => {
     const fetchWebinar = async () => {
-      const { data, error } = await supabase
-        .from('webinars')
-        .select(`
-          *,
-          simulated_messages(*, order: sort_order),
-          cta_configs(*, order: sort_order),
-          polls(*, poll_responses(*)),
-          sales_notifications(*, order: show_at_seconds),
-          audience_configs(*)
-        `)
-        .eq('slug', slug)
-        .single();
+      // Leitura pública via RPC SECURITY DEFINER (as tabelas do funil deixaram
+      // de ser world-readable — ver migration 008). O bundle vem no mesmo
+      // formato aninhado dos embedded-selects anteriores.
+      const { data } = await supabase.rpc('get_public_webinar_by_slug', {
+        p_slug: slug,
+      });
 
       if (data) {
         setWebinar(data);

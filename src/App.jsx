@@ -7,6 +7,8 @@ import PublicLayout from './components/layout/PublicLayout';
 // Lazy loaded Auth pages
 const LoginPage = lazy(() => import('./pages/auth/LoginPage'));
 const RegisterPage = lazy(() => import('./pages/auth/RegisterPage'));
+const ForgotPasswordPage = lazy(() => import('./pages/auth/ForgotPasswordPage'));
+const ResetPasswordPage = lazy(() => import('./pages/auth/ResetPasswordPage'));
 
 // Lazy loaded Dashboard pages
 const DashboardPage = lazy(() => import('./pages/dashboard/DashboardPage'));
@@ -99,6 +101,18 @@ export default function App() {
               </GuestRoute>
             }
           />
+          <Route
+            path="/auth/forgot-password"
+            element={
+              <GuestRoute>
+                <ForgotPasswordPage />
+              </GuestRoute>
+            }
+          />
+          {/* Reset password is reached via the recovery email link, which
+              establishes a temporary session — so it must NOT sit behind
+              GuestRoute (that would bounce the user to the dashboard). */}
+          <Route path="/auth/reset-password" element={<ResetPasswordPage />} />
 
           {/* Protected dashboard pages */}
           <Route

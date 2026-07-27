@@ -14,13 +14,13 @@ const PUBLIC_NAV = [
   { to: '/webinars', icon: Video, labelKey: 'webinar.webinars' },
   { to: '/analytics', icon: BarChart3, labelKey: 'analytics.title' },
   { to: '/leads', icon: Users, label: 'Leads' },
-  { to: '/admin/page-templates', icon: FileText, label: 'Templates de páginas' },
   { to: '/settings', icon: Settings, labelKey: 'common.settings' },
 ];
 
 const ADMIN_NAV = [
   { to: '/admin', icon: Shield, label: 'Painel Admin', end: true },
   { to: '/users', icon: Users, label: 'Usuários' },
+  { to: '/admin/page-templates', icon: FileText, label: 'Templates de páginas' },
   { to: '/audit', icon: ScrollText, label: 'Auditoria' },
 ];
 

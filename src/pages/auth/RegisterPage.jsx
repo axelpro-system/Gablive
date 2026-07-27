@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
-import { Mail, Lock, User, Building2, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, User, Building2, ArrowRight, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
 import './AuthPages.css';
 
 export default function RegisterPage() {
@@ -18,6 +18,7 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [confirmationSent, setConfirmationSent] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -31,8 +32,14 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      await signUp({ email, password, name, orgName });
-      navigate('/dashboard');
+      const data = await signUp({ email, password, name, orgName });
+      // Sessão presente = confirmação de e-mail desligada, entra direto.
+      // Sem sessão = confirmação exigida, mostra "verifique seu e-mail".
+      if (data?.session) {
+        navigate('/dashboard');
+      } else {
+        setConfirmationSent(true);
+      }
     } catch (err) {
       setError(t('auth.registerError'));
     } finally {
@@ -52,9 +59,21 @@ export default function RegisterPage() {
             <p className="auth-subtitle">{t('auth.registerSubtitle')}</p>
           </div>
 
+          {confirmationSent ? (
+            <div className="auth-confirmation">
+              <CheckCircle2 size={48} className="auth-confirmation-icon" aria-hidden="true" />
+              <p className="auth-confirmation-text" role="status">
+                {t('auth.checkEmailTitle')}
+              </p>
+              <p className="auth-subtitle">{t('auth.checkEmailSubtitle', { email })}</p>
+              <Link to="/auth/login" className="btn btn-primary btn-lg auth-submit">
+                {t('auth.backToLogin')}
+              </Link>
+            </div>
+          ) : (
           <form className="auth-form" onSubmit={handleSubmit}>
             {error && (
-              <div className="auth-error">
+              <div className="auth-error" role="alert">
                 {error}
               </div>
             )}
@@ -179,6 +198,7 @@ export default function RegisterPage() {
               )}
             </button>
           </form>
+          )}
 
           <div className="auth-footer">
             <p>

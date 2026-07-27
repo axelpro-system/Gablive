@@ -1,11 +1,17 @@
 import { useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useOrgWebinarStats } from '../../hooks/useAnalytics';
 import { Users, MousePointer2, CheckCircle2, TrendingUp, Filter } from 'lucide-react';
 import './DashboardPage.css';
 
 export default function GlobalAnalyticsPage() {
+  const { t } = useTranslation();
   const { rows, loading, error } = useOrgWebinarStats();
-  const [selectedWebinarId, setSelectedWebinarId] = useState('all');
+  const [searchParams] = useSearchParams();
+  const [selectedWebinarId, setSelectedWebinarId] = useState(
+    () => searchParams.get('webinar') || 'all'
+  );
 
   const filteredRows = useMemo(() => {
     if (selectedWebinarId === 'all') return rows;
@@ -63,7 +69,7 @@ export default function GlobalAnalyticsPage() {
       ) : error ? (
         <div className="card p-6">
           <p className="text-gray-500 text-sm">
-            Não foi possível carregar os relatórios. Confirme se a migration 005 está aplicada.
+            {t('analytics.loadError')}
           </p>
         </div>
       ) : (

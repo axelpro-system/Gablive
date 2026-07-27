@@ -154,7 +154,7 @@ export default function WebinarsListPage() {
                             {t('common.preview')}
                           </Link>
                           <Link
-                            to={`/analytics/${webinar.id}`}
+                            to={`/analytics?webinar=${webinar.id}`}
                             className="dropdown-item"
                             onClick={() => setOpenMenu(null)}
                           >

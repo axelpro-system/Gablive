@@ -33,11 +33,9 @@ export default function RegistrationPage() {
 
   useEffect(() => {
     const fetch = async () => {
-      const { data: webinarData } = await supabase
-        .from('webinars')
-        .select('*, registration_pages(*), login_customizations(*)')
-        .eq('slug', slug)
-        .single();
+      const { data: webinarData } = await supabase.rpc('get_public_webinar_by_slug', {
+        p_slug: slug,
+      });
 
       if (webinarData) {
         setWebinar(webinarData);
