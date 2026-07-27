@@ -28,6 +28,7 @@ const RegistrationPage = lazy(() => import('./pages/public/RegistrationPage'));
 const WaitRoomPage = lazy(() => import('./pages/public/WaitRoomPage'));
 const WebinarRoomPage = lazy(() => import('./pages/public/WebinarRoomPage'));
 const ReplayPage = lazy(() => import('./pages/public/ReplayPage'));
+const LandingPage = lazy(() => import('./pages/public/LandingPage'));
 
 function LoadingFallback() {
   return (
@@ -135,8 +136,10 @@ export default function App() {
             <Route path="/admin/page-templates" element={<PageTemplatesEditor />} />
           </Route>
 
+          {/* Landing Page */}
+          <Route path="/" element={<LandingPage />} />
+
           {/* Redirects */}
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </Suspense>
