@@ -14,7 +14,8 @@ import { useWatchMilestones } from '../../hooks/useWatchMilestones';
 import { useVideoProgressTracking } from '../../hooks/useVideoProgressTracking';
 import { useSimulatedAudience } from '../../hooks/useSimulatedAudience';
 import { useRegistration } from '../../hooks/useRegistration';
-import { WEBINAR_STATUS, WEBINAR_TYPE, ANALYTICS_EVENTS } from '../../lib/constants';
+import { WEBINAR_STATUS, ANALYTICS_EVENTS } from '../../lib/constants';
+import { buildVideoEmbedUrl, getLiveRoomState, LIVE_ROOM_STATE } from '../../lib/liveRoomState';
 import { sanitizeInput } from '../../lib/sanitize';
 import {
   Send, Users, Radio, Clock, ExternalLink, X,
@@ -142,18 +143,11 @@ export default function WebinarRoomPage() {
   };
 
   const getVideoEmbed = useCallback(() => {
-    if (!webinar?.video_url) return null;
-    const url = webinar.video_url;
-    const ytMatch = url.match(
-      /(?:youtube\.com\/(?:watch\?v=|embed\/|live\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/
+    if (!webinar) return null;
+    return buildVideoEmbedUrl(
+      webinar.video_url,
+      typeof window !== 'undefined' ? window.location.origin : '',
     );
-    if (ytMatch) {
-      const origin = window.location.origin;
-      return `https://www.youtube.com/embed/${ytMatch[1]}?autoplay=1&mute=1&enablejsapi=1&origin=${encodeURIComponent(origin)}&rel=0&controls=0&modestbranding=1&showinfo=0&fs=0&iv_load_policy=3&disablekb=1`;
-    }
-    const vimeoMatch = url.match(/vimeo\.com\/(\d+)/);
-    if (vimeoMatch) return `https://player.vimeo.com/video/${vimeoMatch[1]}?autoplay=1`;
-    return url;
   }, [webinar]);
 
   const countdown = useCountdown(webinar?.scheduled_at);
@@ -175,9 +169,19 @@ export default function WebinarRoomPage() {
     );
   }
 
-  const isLive = webinar.status === WEBINAR_STATUS.LIVE;
-  const isScheduled = webinar.status === WEBINAR_STATUS.SCHEDULED;
-  const isRecorded = webinar.type === WEBINAR_TYPE.RECORDED;
+  // LIVE-01: live status OR scheduled live with scheduled_at <= now opens player
+  const roomState = getLiveRoomState(webinar);
+  const isWaiting = roomState.state === LIVE_ROOM_STATE.WAITING || roomState.showWaiting;
+  const isEnded = roomState.state === LIVE_ROOM_STATE.ENDED;
+  const isUnavailable = roomState.state === LIVE_ROOM_STATE.UNAVAILABLE;
+  const showPlayer = roomState.state === LIVE_ROOM_STATE.PLAYER || roomState.showPlayer;
+  const embedUrl = getVideoEmbed();
+  const isLiveBadge =
+    showPlayer &&
+    (webinar.status === WEBINAR_STATUS.LIVE ||
+      roomState.reason === 'scheduled_time_reached' ||
+      roomState.reason === 'status_live' ||
+      roomState.reason === 'playable');
 
   return (
     <div className="room-page">
@@ -192,7 +196,7 @@ export default function WebinarRoomPage() {
       <main className="room-content">
         <div className="room-stage">
           <section className="room-video-area" aria-label="Transmissão do webinar">
-            {isScheduled && !isRecorded ? (
+            {isWaiting ? (
               <div className="room-waiting">
                 <Clock size={48} />
                 <h2>{t('room.waitingToStart')}</h2>
@@ -205,31 +209,32 @@ export default function WebinarRoomPage() {
                   ))}
                 </div>
               </div>
+            ) : isEnded ? (
+              <div className="room-waiting">
+                <Clock size={48} />
+                <h2>{t('room.ended', { defaultValue: 'Este webinário foi encerrado.' })}</h2>
+              </div>
+            ) : isUnavailable || !embedUrl ? (
+              <div className="room-video-placeholder">
+                <VideoIcon size={64} />
+                <p>{t('room.videoUnavailable', { defaultValue: 'Transmissão indisponível. Verifique a URL do vídeo.' })}</p>
+              </div>
             ) : (
               <div className="room-video-wrapper">
-                {getVideoEmbed() ? (
-                  <>
-                    <iframe
-                      ref={iframeRef}
-                      className="room-video-iframe"
-                      src={getVideoEmbed()}
-                      title={webinar.title}
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                    />
-                    <div className="room-video-overlay-blocker" />
-                    {isMuted && (
-                      <button className="room-unmute-overlay" onClick={handleUnmute} aria-label="Ativar som">
-                        <Volume2 size={24} className="unmute-icon" />
-                        <span>Sua transmissão começou! Clique para ativar o som 🔊</span>
-                      </button>
-                    )}
-                  </>
-                ) : (
-                  <div className="room-video-placeholder">
-                    <VideoIcon size={64} />
-                    <p>Video will appear here</p>
-                  </div>
+                <iframe
+                  ref={iframeRef}
+                  className="room-video-iframe"
+                  src={embedUrl}
+                  title={webinar.title}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+                <div className="room-video-overlay-blocker" />
+                {isMuted && (
+                  <button className="room-unmute-overlay" onClick={handleUnmute} aria-label="Ativar som">
+                    <Volume2 size={24} className="unmute-icon" />
+                    <span>Sua transmissão começou! Clique para ativar o som 🔊</span>
+                  </button>
                 )}
 
                 <div className="room-sales-toasts">
@@ -247,7 +252,7 @@ export default function WebinarRoomPage() {
           <section className="room-video-meta" aria-label="Informações do webinar">
             <div className="room-video-meta-copy">
               <div className="room-video-status">
-                {isLive && (
+                {isLiveBadge && (
                   <span className="room-live-badge">
                     <Radio size={14} /> {t('room.liveNow')}
                   </span>
@@ -272,7 +277,11 @@ export default function WebinarRoomPage() {
           </section>
 
           {showCtaBanner && activeCtas.map((cta) => (
-            <section key={cta.id} className="room-cta-banner" aria-label={`Oferta: ${cta.title}`}>
+            <section
+              key={cta.id}
+              className={`room-cta-banner ${cta.banner_desktop_url ? '' : 'room-cta-banner--no-image'}`}
+              aria-label={`Oferta: ${cta.title}`}
+            >
               <button className="room-cta-dismiss" onClick={() => handleDismissCta(cta.id)}
                 aria-label="Fechar oferta">
                 <X size={16} />

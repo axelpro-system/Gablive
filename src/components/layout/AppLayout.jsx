@@ -4,7 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useMenuToggle } from '../../hooks/useMenuToggle';
 import {
   LayoutDashboard, Video, BarChart3, Settings, LogOut,
-  Menu, X, Globe, ChevronDown, Shield, ScrollText, Users, FileText,
+  Menu, X, Globe, ChevronDown, Shield, ScrollText, Users, FileText, Plug, Bot,
 } from 'lucide-react';
 import { ROLES } from '../../lib/constants';
 import './AppLayout.css';
@@ -14,6 +14,8 @@ const PUBLIC_NAV = [
   { to: '/webinars', icon: Video, labelKey: 'webinar.webinars' },
   { to: '/analytics', icon: BarChart3, labelKey: 'analytics.title' },
   { to: '/leads', icon: Users, label: 'Leads' },
+  { to: '/integrations', icon: Plug, labelKey: 'integrations.title' },
+  { to: '/ai-agents', icon: Bot, label: 'Agentes IA' },
   { to: '/settings', icon: Settings, labelKey: 'common.settings' },
 ];
 

@@ -5,6 +5,7 @@ import { supabase } from '../../lib/supabase';
 import { useCountdown } from '../../hooks/useCountdown';
 import { useSeo } from '../../hooks/useSeo';
 import { Clock, Users } from 'lucide-react';
+import { getLiveRoomState } from '../../lib/liveRoomState';
 import './WaitRoomPage.css';
 
 export default function WaitRoomPage() {
@@ -53,8 +54,17 @@ export default function WaitRoomPage() {
   const target = webinar?.is_just_in_time ? registration?.session_start_at : webinar?.scheduled_at;
   const countdown = useCountdown(target);
 
+  // Live / scheduled-with-time-reached / recorded: skip waiting and open the room
   useEffect(() => {
-    if (countdown.isExpired && webinar && registration) {
+    if (!webinar || !registration) return;
+    if (webinar.is_just_in_time) {
+      if (countdown.isExpired) {
+        navigate(`/room/${webinar.slug}`, { replace: true });
+      }
+      return;
+    }
+    const state = getLiveRoomState(webinar);
+    if (state.showPlayer || state.state === 'player' || countdown.isExpired) {
       navigate(`/room/${webinar.slug}`, { replace: true });
     }
   }, [countdown.isExpired, webinar, registration, navigate]);

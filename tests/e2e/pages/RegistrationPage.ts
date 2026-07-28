@@ -18,7 +18,7 @@ export class RegistrationPage {
     this.emailInput = page.locator('#reg-email')
     this.phoneInput = page.locator('#reg-phone')
     this.submitButton = page.locator('button.reg-submit')
-    this.successMessage = page.locator('.reg-success-page')
+    this.successMessage = page.locator('.reg-success-page, h1:has-text("Registro confirmado"), h1:has-text("Inscrição Confirmada")')
     this.errorMessage = page.locator('.auth-error')
     this.countdown = page.locator('.reg-countdown')
     this.formSection = page.locator('#reg-form')
@@ -46,7 +46,8 @@ export class RegistrationPage {
   }
 
   async isSuccessVisible() {
-    return this.successMessage.isVisible().catch(() => false)
+    const successHeading = this.page.getByRole('heading', { name: /registro confirmado|inscri/i })
+    return successHeading.isVisible().catch(() => this.successMessage.isVisible().catch(() => false))
   }
 
   async getErrorMessage() {

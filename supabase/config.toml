@@ -400,6 +400,24 @@ verify_jwt = false
 [functions.resend-setup]
 verify_jwt = true
 
+# Public purchase webhooks (Hotmart/Selflux) — auth via provider secret, not JWT
+[functions.purchase-webhook]
+verify_jwt = false
+
+# Public webhook receiver — auth via provider secret, not JWT
+[functions.receive-integration-webhook]
+verify_jwt = false
+
+# Org admin save/test credentials — auth verified inside the function via Service Role
+[functions.save-integration-config]
+verify_jwt = false
+
+[functions.manage-sales-integration]
+verify_jwt = false
+
+[functions.ai-agent-run]
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327

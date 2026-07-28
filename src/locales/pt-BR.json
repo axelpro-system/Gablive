@@ -141,7 +141,11 @@
     "registrationLink": "Link de registro",
     "roomLink": "Link da sala",
     "goLive": "Iniciar ao vivo",
+    "goLiveAgain": "Reabrir ao vivo",
     "endLive": "Encerrar ao vivo",
+    "deleteTypeToConfirm": "Para confirmar, digite o título do webinário:",
+    "deleteError": "Não foi possível excluir o webinário. Tente novamente.",
+    "statusChangeError": "Não foi possível alterar o status do webinário. Tente novamente.",
     "attendees": "Participantes",
     "registrations": "Registros"
   },
@@ -254,6 +258,7 @@
     "waitingToStart": "O webinário começará em breve...",
     "liveNow": "AO VIVO",
     "ended": "Este webinário já encerrou",
+    "videoUnavailable": "Transmissão indisponível. Verifique a URL do vídeo.",
     "replayAvailable": "Replay disponível",
     "replayExpired": "O replay expirou",
     "replayExpiresIn": "Replay expira em {{time}}",
@@ -261,6 +266,10 @@
     "offer": "Oferta especial",
     "offerExpires": "Oferta expira em",
     "claimOffer": "Garantir oferta"
+  },
+  "integrations": {
+    "title": "Integrações",
+    "subtitle": "Hotmart, Selflux e mapeamento de produtos"
   },
   "admin": {
     "title": "Administração",
@@ -271,5 +280,33 @@
     "activeWebinars": "Webinários ativos",
     "overview": "Visão Geral",
     "emptyTable": "Nenhum registro encontrado"
+  },
+  "users": {
+    "title": "Usuários",
+    "subtitle": "Gerencie os membros da sua organização",
+    "inviteUser": "Convidar usuário",
+    "inviteTitle": "Convidar Usuário",
+    "name": "Nome",
+    "email": "E-mail",
+    "role": "Papel",
+    "status": "Status",
+    "invitedAt": "Convidado em",
+    "actions": "Ações",
+    "roleAdmin": "Administrador",
+    "rolePresenter": "Operador",
+    "roleAttendee": "Atendente",
+    "statusPending": "Pendente",
+    "statusActive": "Ativo",
+    "statusInvitePending": "Convite pendente",
+    "revokeAccess": "Revogar",
+    "revokeConfirm": "Tem certeza que deseja revogar o acesso deste usuário?",
+    "roleChangeConfirm": "Alterar papel de {{name}} para {{role}}?",
+    "roleUpdated": "Papel atualizado com sucesso",
+    "roleUpdateError": "Erro ao atualizar papel",
+    "inviteSent": "Convite enviado para {{email}}",
+    "inviteDescription": "O usuário receberá um e-mail com link mágico para acessar a plataforma.",
+    "noMembers": "Nenhum membro encontrado.",
+    "sendInvite": "Enviar convite",
+    "sending": "Enviando..."
   }
 }

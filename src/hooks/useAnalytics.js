@@ -72,7 +72,12 @@ export function useAnalytics(webinarId) {
   const [error, setError] = useState(null);
 
   const fetchStats = useCallback(async () => {
-    if (!webinarId) return;
+    if (!webinarId) {
+      setStats(null);
+      setError(null);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError(null);
 

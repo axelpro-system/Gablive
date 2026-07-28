@@ -16,6 +16,50 @@ import { WebinarData } from './webinar'
  * These were the root cause of a production bug. Do NOT guess — check the schema.
  */
 export async function mockWebinarRoomPage(page: Page, webinar: WebinarData) {
+  const publicWebinarPayload = {
+    ...webinar,
+    type: (webinar as WebinarData & { type?: string }).type || webinar.webinar_type,
+    audience_configs: webinar.audience_configs,
+    login_customizations: webinar.login_customizations,
+    cta_configs: webinar.cta_configs,
+    registration_pages: webinar.registration_pages,
+    simulated_messages: webinar.simulated_messages || [],
+    sales_notifications: webinar.sales_notifications || [],
+    polls: webinar.polls || [],
+  }
+
+  await page.route(`**/rest/v1/rpc/get_public_webinar_by_slug`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(publicWebinarPayload),
+    })
+  })
+
+  await page.route(`**/rest/v1/rpc/get_registration_by_id`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(null),
+    })
+  })
+
+  await page.route(`**/rest/v1/rpc/mark_registration_attended`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(null),
+    })
+  })
+
+  await page.route(`**/rest/v1/rpc/get_public_simulated_messages`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(webinar.simulated_messages || []),
+    })
+  })
+
   // Mock webinar query with all relations
   // NOTE: When the client uses .single(), postgrest-js v2.110+ sets
   // Accept: application/vnd.pgrst.object+json and expects PostgREST to return
@@ -69,10 +113,17 @@ export async function mockWebinarRoomPage(page: Page, webinar: WebinarData) {
   })
 
   await page.route(`**/rest/v1/chat_messages**`, async (route) => {
+    const messages = (webinar.chat_messages || []).map((message, index) => ({
+      id: message.id || `chat-${index}`,
+      webinar_id: webinar.id,
+      user_name: message.author_name,
+      message: message.content,
+      sent_at: new Date(Date.now() - Math.max(0, 120 - message.time_seconds) * 1000).toISOString(),
+    }))
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify(webinar.chat_messages),
+      body: JSON.stringify(messages),
     })
   })
 
@@ -129,6 +180,47 @@ export async function mockWebinarRoomPage(page: Page, webinar: WebinarData) {
  * Same relationship rules apply.
  */
 export async function mockRegistrationPage(page: Page, webinar: WebinarData) {
+  const publicWebinarPayload = {
+    ...webinar,
+    type: (webinar as WebinarData & { type?: string }).type || webinar.webinar_type,
+    audience_configs: webinar.audience_configs,
+    login_customizations: webinar.login_customizations,
+    registration_pages: webinar.registration_pages,
+    cta_configs: webinar.cta_configs,
+  }
+
+  await page.route(`**/rest/v1/rpc/get_public_webinar_by_slug`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(publicWebinarPayload),
+    })
+  })
+
+  await page.route(`**/rest/v1/rpc/check_registration_email`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(false),
+    })
+  })
+
+  await page.route(`**/rest/v1/rpc/enqueue_confirmation_email`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(true),
+    })
+  })
+
+  await page.route(`**/rest/v1/analytics_events**`, async (route) => {
+    await route.fulfill({
+      status: 201,
+      contentType: 'application/json',
+      body: JSON.stringify([]),
+    })
+  })
+
   // Mock the main webinar query used by RegistrationPage
   await page.route(`**/rest/v1/webinars**`, async (route) => {
     const acceptHeader = route.request().headers()['accept'] || ''

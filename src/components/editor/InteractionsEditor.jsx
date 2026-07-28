@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { MessageSquare, ExternalLink, BarChart3, Plus, Trash2, Save, ShoppingCart, Users2 } from 'lucide-react';
 import { AUDIENCE_MODE } from '../../lib/constants';
+import TimeInput from './TimeInput';
 import './InteractionsEditor.css';
 
 const CHAT_TEMPLATES = [
@@ -217,9 +218,13 @@ export default function InteractionsEditor({ webinarId }) {
   };
 
   const formatSeconds = (totalSeconds) => {
-    const m = Math.floor(totalSeconds / 60);
-    const s = totalSeconds % 60;
-    return `${m}:${s.toString().padStart(2, '0')}`;
+    const t = Math.max(0, Math.floor(Number(totalSeconds) || 0));
+    const h = Math.floor(t / 3600);
+    const m = Math.floor((t % 3600) / 60);
+    const s = t % 60;
+    const mm = m.toString().padStart(2, '0');
+    const ss = s.toString().padStart(2, '0');
+    return h > 0 ? `${h}:${mm}:${ss}` : `${m}:${ss}`;
   };
 
   if (loading) return <div className="spinner spinner-sm" />;
@@ -268,8 +273,11 @@ export default function InteractionsEditor({ webinarId }) {
               </div>
 
               <form onSubmit={addMessage} className="add-form">
-                <div className="form-row" style={{ gridTemplateColumns: '80px 1fr 2fr auto' }}>
-                  <input type="number" className="input" placeholder="Segs." value={newMsg.timestamp_seconds} onChange={e => setNewMsg({...newMsg, timestamp_seconds: parseInt(e.target.value) || 0})} min="0" required />
+                <div className="form-row" style={{ gridTemplateColumns: '260px 1fr 2fr auto', alignItems: 'end' }}>
+                  <div className="input-group">
+                    <label className="input-label">Mostrar em</label>
+                    <TimeInput value={newMsg.timestamp_seconds} onChange={(v) => setNewMsg({ ...newMsg, timestamp_seconds: v })} />
+                  </div>
                   <input type="text" className="input" placeholder="Nome do autor" value={newMsg.author_name} onChange={e => setNewMsg({...newMsg, author_name: e.target.value})} required />
                   <input type="text" className="input" placeholder="Mensagem..." value={newMsg.message} onChange={e => setNewMsg({...newMsg, message: e.target.value})} required />
                   <button type="submit" className="btn btn-primary"><Plus size={16} /> Adicionar</button>
@@ -300,18 +308,24 @@ export default function InteractionsEditor({ webinarId }) {
             </div>
             <div className="card-body">
               <form onSubmit={addCta} className="add-form flex-col">
-                <div className="form-row">
-                  <input type="number" className="input" placeholder="Mostrar em (segs)" value={newCta.show_at_seconds} onChange={e => setNewCta({...newCta, show_at_seconds: parseInt(e.target.value) || 0})} required />
+                <div className="form-row" style={{ alignItems: 'end' }}>
+                  <div className="input-group">
+                    <label className="input-label">Mostrar em</label>
+                    <TimeInput value={newCta.show_at_seconds} onChange={(v) => setNewCta({ ...newCta, show_at_seconds: v })} />
+                  </div>
                   <input type="text" className="input" placeholder="Título (Ex: Curso Completo)" value={newCta.title} onChange={e => setNewCta({...newCta, title: e.target.value})} required />
                 </div>
                 <div className="form-row">
                   <input type="text" className="input" placeholder="Texto do Botão" value={newCta.button_text} onChange={e => setNewCta({...newCta, button_text: e.target.value})} required />
                   <input type="url" className="input" placeholder="URL do Botão (Checkout)" value={newCta.button_url} onChange={e => setNewCta({...newCta, button_url: e.target.value})} required />
                 </div>
-                <div className="form-row">
+                <div className="form-row" style={{ alignItems: 'end' }}>
                   <input type="number" step="0.01" className="input" placeholder="Preço original (R$)" value={newCta.original_price} onChange={e => setNewCta({...newCta, original_price: e.target.value})} />
                   <input type="number" step="0.01" className="input" placeholder="Preço da oferta (R$)" value={newCta.sale_price} onChange={e => setNewCta({...newCta, sale_price: e.target.value})} />
-                  <input type="number" className="input" placeholder="Início do pitch (segs)" value={newCta.pitch_start_seconds} onChange={e => setNewCta({...newCta, pitch_start_seconds: e.target.value})} />
+                  <div className="input-group">
+                    <label className="input-label">Início do pitch (opcional)</label>
+                    <TimeInput value={newCta.pitch_start_seconds} onChange={(v) => setNewCta({ ...newCta, pitch_start_seconds: v })} allowEmpty />
+                  </div>
                 </div>
                 <div className="form-row">
                   <input type="url" className="input" placeholder="Banner desktop (URL)" value={newCta.banner_desktop_url} onChange={e => setNewCta({...newCta, banner_desktop_url: e.target.value})} />
@@ -350,8 +364,11 @@ export default function InteractionsEditor({ webinarId }) {
             </div>
             <div className="card-body">
               <form onSubmit={addPoll} className="add-form flex-col">
-                <div className="form-row">
-                  <input type="number" className="input" placeholder="Mostrar em (segs)" value={newPoll.show_at_seconds} onChange={e => setNewPoll({...newPoll, show_at_seconds: parseInt(e.target.value) || 0})} required />
+                <div className="form-row" style={{ alignItems: 'end' }}>
+                  <div className="input-group">
+                    <label className="input-label">Mostrar em</label>
+                    <TimeInput value={newPoll.show_at_seconds} onChange={(v) => setNewPoll({ ...newPoll, show_at_seconds: v })} />
+                  </div>
                   <input type="text" className="input" placeholder="Pergunta da Enquete" value={newPoll.question} onChange={e => setNewPoll({...newPoll, question: e.target.value})} required />
                 </div>
                 <div className="form-row">
@@ -385,8 +402,11 @@ export default function InteractionsEditor({ webinarId }) {
             </div>
             <div className="card-body">
               <form onSubmit={addSale} className="add-form flex-col">
-                <div className="form-row">
-                  <input type="number" className="input" placeholder="Mostrar em (segs)" value={newSale.show_at_seconds} onChange={e => setNewSale({...newSale, show_at_seconds: parseInt(e.target.value) || 0})} required />
+                <div className="form-row" style={{ alignItems: 'end' }}>
+                  <div className="input-group">
+                    <label className="input-label">Mostrar em</label>
+                    <TimeInput value={newSale.show_at_seconds} onChange={(v) => setNewSale({ ...newSale, show_at_seconds: v })} />
+                  </div>
                   <input type="text" className="input" placeholder="Nome do comprador" value={newSale.buyer_name} onChange={e => setNewSale({...newSale, buyer_name: e.target.value})} required />
                   <input type="text" className="input" placeholder="Cidade/UF (opcional)" value={newSale.buyer_location} onChange={e => setNewSale({...newSale, buyer_location: e.target.value})} />
                 </div>

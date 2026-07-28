@@ -5,25 +5,101 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" type="image/png" sizes="256x256" href="/gablive-mark-256.png" />
     <link rel="apple-touch-icon" href="/gablive-mark-256.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Plataforma multi-tenant de webinários para funil de vendas — crie, gerencie e converta com webinários ao vivo, gravados e evergreen (Just-in-Time)." />
+    <meta name="theme-color" content="#101828" />
+    <meta name="robots" content="index, follow" />
+    <meta name="description" content="Conecte vídeo, página, CTA e conversão por timestamp. GabLive é a plataforma de webinar para operações de vendas e agências." />
+    <link rel="canonical" href="https://www.gablive.com.br/" />
 
     <!-- Open Graph / Social -->
-    <meta property="og:title" content="Gablive" />
-    <meta property="og:description" content="Plataforma multi-tenant de webinários para funil de vendas — crie, gerencie e converta com webinários ao vivo, gravados e evergreen (Just-in-Time)." />
-    <meta property="og:image" content="/og-image.png" />
+    <meta property="og:title" content="GabLive — Analytics de webinar por timestamp" />
+    <meta property="og:description" content="Saiba em que segundo do seu webinar a venda é decidida." />
+    <meta property="og:image" content="https://www.gablive.com.br/og-image.png" />
     <meta property="og:image:width" content="3840" />
     <meta property="og:image:height" content="2160" />
+    <meta property="og:url" content="https://www.gablive.com.br/" />
     <meta property="og:type" content="website" />
+    <meta property="og:locale" content="pt_BR" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Gablive" />
-    <meta name="twitter:description" content="Plataforma multi-tenant de webinários para funil de vendas — crie, gerencie e converta com webinários ao vivo, gravados e evergreen (Just-in-Time)." />
-    <meta name="twitter:image" content="/og-image.png" />
+    <meta name="twitter:title" content="GabLive — Analytics de webinar por timestamp" />
+    <meta name="twitter:description" content="Saiba em que segundo do seu webinar a venda é decidida." />
+    <meta name="twitter:image" content="https://www.gablive.com.br/og-image.png" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-    <title>Gablive — Plataforma de Webinários para Conversão</title>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "@id": "https://www.gablive.com.br/#website",
+            "url": "https://www.gablive.com.br/",
+            "name": "GabLive",
+            "inLanguage": "pt-BR"
+          },
+          {
+            "@type": "SoftwareApplication",
+            "@id": "https://www.gablive.com.br/#software",
+            "name": "GabLive",
+            "url": "https://www.gablive.com.br/",
+            "applicationCategory": "BusinessApplication",
+            "operatingSystem": "Web",
+            "description": "Plataforma de webinar para operações de vendas, com Just-in-Time, analytics por timestamp e gestão multi-tenant."
+          },
+          {
+            "@type": "Organization",
+            "@id": "https://www.gablive.com.br/#organization",
+            "name": "GabLive",
+            "url": "https://www.gablive.com.br/",
+            "logo": "https://www.gablive.com.br/gablive-mark-512.png"
+          }
+        ]
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "O GabLive substitui o Zoom ou o Vimeo?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "O GabLive organiza a jornada comercial do webinar e pode usar YouTube ou Vimeo como fonte de vídeo, conectando registro, sala, CTAs, comportamento e conversão."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Quais formatos de webinar a plataforma suporta?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "A operação contempla webinars ao vivo, gravados e Just-in-Time."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "O que significa analytics por timestamp?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Significa relacionar retenção, abertura da oferta, clique no CTA e outros eventos ao tempo do vídeo."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Agências conseguem separar os dados de cada cliente?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Sim. Cada organização é um tenant isolado por Row-Level Security."
+            }
+          }
+        ]
+      }
+    </script>
+    <title>GabLive — Analytics de webinar por timestamp</title>
   </head>
   <body>
     <div id="root"></div>

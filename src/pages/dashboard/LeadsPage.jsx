@@ -86,7 +86,14 @@ export default function LeadsPage() {
 
   // Load webinar list once per org
   useEffect(() => {
-    if (!profile?.org_id) return;
+    if (!profile?.org_id) {
+      setWebinars([]);
+      setWebinarsReady(true);
+      setLeads([]);
+      setTotalCount(0);
+      setLoading(false);
+      return undefined;
+    }
 
     let cancelled = false;
 
@@ -130,7 +137,13 @@ export default function LeadsPage() {
 
   // Paginated fetch (waits until webinar list is ready)
   useEffect(() => {
-    if (!profile?.org_id || !webinarsReady) return;
+    if (!profile?.org_id) {
+      setLeads([]);
+      setTotalCount(0);
+      setLoading(false);
+      return undefined;
+    }
+    if (!webinarsReady) return undefined;
 
     const webIds = targetWebinarIds();
     if (webIds.length === 0) {

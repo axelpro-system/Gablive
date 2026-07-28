@@ -7,13 +7,17 @@ export function OrgProvider({ children }) {
   const { profile } = useAuth();
 
   const org = useMemo(() => {
-    if (!profile?.organizations) return null;
-    return profile.organizations;
+    if (!profile) return null;
+    return profile.organizations || {
+      id: profile.org_id,
+      name: '',
+      slug: '',
+    };
   }, [profile]);
 
   const value = {
     org,
-    orgId: org?.id ?? null,
+    orgId: profile?.org_id ?? org?.id ?? null,
     orgName: org?.name ?? '',
     orgSlug: org?.slug ?? '',
   };

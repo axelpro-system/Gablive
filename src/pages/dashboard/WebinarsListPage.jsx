@@ -1,6 +1,9 @@
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useWebinars } from '../../hooks/useWebinar';
+import { useOrg } from '../../contexts/OrgContext';
+import { useAuth } from '../../contexts/AuthContext';
+import DeleteWebinarDialog from '../../components/webinars/DeleteWebinarDialog';
 import { WEBINAR_STATUS, WEBINAR_TYPE } from '../../lib/constants';
 import { format } from 'date-fns';
 import { ptBR, enUS } from 'date-fns/locale';
@@ -18,13 +21,15 @@ import {
   BarChart3,
 } from 'lucide-react';
 import { useState } from 'react';
-import { supabase } from '../../lib/supabase';
 import './WebinarsListPage.css';
 
 export default function WebinarsListPage() {
   const { t, i18n } = useTranslation();
   const { webinars, loading, refetch } = useWebinars();
+  const { orgId } = useOrg();
+  const { user } = useAuth();
   const [openMenu, setOpenMenu] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   const dateLocale = i18n.language === 'pt-BR' ? ptBR : enUS;
 
@@ -35,9 +40,8 @@ export default function WebinarsListPage() {
     [WEBINAR_STATUS.ENDED]: { class: 'badge-gray', icon: null },
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm(t('webinar.deleteConfirm'))) return;
-    await supabase.from('webinars').delete().eq('id', id);
+  const handleDeleted = () => {
+    setDeleteTarget(null);
     refetch();
   };
 
@@ -164,7 +168,7 @@ export default function WebinarsListPage() {
                           <div className="dropdown-divider" />
                           <button
                             className="dropdown-item danger"
-                            onClick={() => { handleDelete(webinar.id); setOpenMenu(null); }}
+                            onClick={() => { setDeleteTarget(webinar); setOpenMenu(null); }}
                           >
                             <Trash2 size={16} />
                             {t('common.delete')}
@@ -199,6 +203,16 @@ export default function WebinarsListPage() {
             );
           })}
         </div>
+      )}
+
+      {deleteTarget && (
+        <DeleteWebinarDialog
+          webinar={deleteTarget}
+          orgId={orgId}
+          userId={user?.id}
+          onClose={() => setDeleteTarget(null)}
+          onDeleted={handleDeleted}
+        />
       )}
     </div>
   );

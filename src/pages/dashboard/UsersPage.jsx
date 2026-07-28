@@ -3,7 +3,8 @@ import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { useOrg } from '../../contexts/OrgContext';
 import { logAudit } from '../../lib/audit';
-import { Users, UserPlus, Mail, Clock, Shield, X, CheckCircle, AlertCircle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { Users, UserPlus, Mail, Clock, Shield, X, CheckCircle, AlertCircle, ChevronDown } from 'lucide-react';
 import './DashboardPage.css';
 
 const ROLE_LABELS = {
@@ -21,6 +22,7 @@ function formatDate(isoString) {
 }
 
 export default function UsersPage() {
+  const { t } = useTranslation();
   const { profile, user } = useAuth();
   const { orgId } = useOrg();
   const [members, setMembers] = useState([]);
@@ -29,9 +31,14 @@ export default function UsersPage() {
   const [inviting, setInviting] = useState(false);
   const [toast, setToast] = useState(null);
   const [form, setForm] = useState({ email: '', role: 'presenter' });
+  const [editingRole, setEditingRole] = useState(null); // member id being edited
 
   const fetchMembers = useCallback(async () => {
-    if (!orgId) return;
+    if (!orgId) {
+      setMembers([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
 
     // Get all profiles for this org from auth.users
@@ -85,6 +92,29 @@ export default function UsersPage() {
       setToast({ type: 'error', message: err.message });
     } finally {
       setInviting(false);
+    }
+  };
+
+  const handleRoleChange = async (memberId, newRole) => {
+    setEditingRole(null);
+    const { error } = await supabase
+      .from('profiles')
+      .update({ role: newRole })
+      .eq('id', memberId);
+
+    if (!error) {
+      logAudit({
+        orgId,
+        userId: user?.id,
+        action: 'update',
+        entityType: 'user',
+        entityId: memberId,
+        description: `Papel alterado para ${ROLE_LABELS[newRole]}`,
+      });
+      setToast({ type: 'success', message: 'Papel atualizado com sucesso' });
+      fetchMembers();
+    } else {
+      setToast({ type: 'error', message: 'Erro ao atualizar papel: ' + error.message });
     }
   };
 
@@ -157,14 +187,18 @@ export default function UsersPage() {
             <thead>
               <tr>
                 <th>Nome</th>
+                <th>E-mail</th>
                 <th>Papel</th>
                 <th>Status</th>
                 <th>Convidado em</th>
-                <th style={{ width: 100 }}>Ações</th>
+                <th style={{ width: 140 }}>Ações</th>
               </tr>
             </thead>
             <tbody>
-              {members.map((m) => (
+              {members.map((m) => {
+                const isSelf = m.user_id === user?.id;
+                const isEditing = editingRole === m.id;
+                return (
                 <tr key={m.id}>
                   <td>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -182,6 +216,7 @@ export default function UsersPage() {
                       <div>
                         <div style={{ fontWeight: 600, fontSize: 14 }}>
                           {m.display_name || 'Usuário'}
+                          {isSelf && <span style={{ fontSize: 11, color: 'var(--color-gray-400)', marginLeft: 6 }}>(você)</span>}
                         </div>
                         <div style={{ fontSize: 12, color: 'var(--color-gray-500)' }}>
                           {m.invite_status === 'pending' ? 'Convite pendente' : 'Ativo'}
@@ -189,13 +224,45 @@ export default function UsersPage() {
                       </div>
                     </div>
                   </td>
+                  <td style={{ fontSize: 13, color: 'var(--color-gray-600)' }}>
+                    {m.email || '—'}
+                  </td>
                   <td>
-                    <span
-                      className={`badge ${m.role === 'admin' ? 'badge-primary' : 'badge-dark'}`}
-                      style={{ fontSize: 11 }}
-                    >
-                      {ROLE_LABELS[m.role] || m.role}
-                    </span>
+                    {isEditing ? (
+                      <select
+                        className="input"
+                        style={{ width: 140, fontSize: 12, padding: '4px 8px' }}
+                        defaultValue={m.role}
+                        onChange={(e) => {
+                          const newRole = e.target.value;
+                          if (newRole !== m.role && confirm(`Alterar papel de ${m.display_name || 'usuário'} para ${ROLE_LABELS[newRole]}?`)) {
+                            handleRoleChange(m.id, newRole);
+                          } else {
+                            setEditingRole(null);
+                          }
+                        }}
+                        onBlur={() => setEditingRole(null)}
+                        autoFocus
+                      >
+                        <option value="admin">Administrador</option>
+                        <option value="presenter">Operador</option>
+                        <option value="attendee">Atendente</option>
+                      </select>
+                    ) : (
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <span
+                          className={`badge ${m.role === 'admin' ? 'badge-primary' : 'badge-dark'}`}
+                          style={{ fontSize: 11, cursor: isSelf ? 'default' : 'pointer' }}
+                          onClick={() => !isSelf && setEditingRole(m.id)}
+                          title={isSelf ? '' : 'Clique para alterar'}
+                        >
+                          {ROLE_LABELS[m.role] || m.role}
+                        </span>
+                        {!isSelf && profile?.role === 'admin' && (
+                          <ChevronDown size={12} style={{ color: 'var(--color-gray-400)' }} />
+                        )}
+                      </span>
+                    )}
                   </td>
                   <td>
                     <span style={{
@@ -213,7 +280,7 @@ export default function UsersPage() {
                     {formatDate(m.invited_at || m.created_at)}
                   </td>
                   <td>
-                    {m.user_id !== user?.id && (
+                    {!isSelf && (
                       <button
                         className="btn btn-ghost btn-sm"
                         onClick={() => handleRevoke(m.id, m.user_id)}
@@ -225,7 +292,7 @@ export default function UsersPage() {
                     )}
                   </td>
                 </tr>
-              ))}
+              )})}
             </tbody>
           </table>
         )}

@@ -1,0 +1,29 @@
+.typewriter {
+  display: inline-flex;
+  align-items: baseline;
+  font-weight: 700;
+  color: var(--color-primary-400, #ef2b2d);
+  white-space: nowrap;
+}
+
+.typewriter__caret {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  margin-left: 2px;
+  background: currentColor;
+  transform: translateY(2px);
+  animation: typewriter-blink 1s steps(2, start) infinite;
+}
+
+@keyframes typewriter-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .typewriter__caret {
+    animation: none;
+  }
+}

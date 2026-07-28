@@ -1,0 +1,38 @@
+/* --- Time Input (H / M / S) --- */
+.time-input {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.time-input-field {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.time-input-field .input {
+  width: 100%;
+  padding-right: 34px; /* espaço para o sufixo da unidade */
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+/* Remove as setas do number input para não competir com o sufixo */
+.time-input-field .input::-webkit-outer-spin-button,
+.time-input-field .input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.time-input-unit {
+  position: absolute;
+  top: 50%;
+  right: var(--space-3);
+  transform: translateY(-50%);
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  color: var(--color-gray-500);
+  pointer-events: none;
+}

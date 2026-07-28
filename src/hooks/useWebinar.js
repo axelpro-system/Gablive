@@ -33,7 +33,12 @@ export function useWebinars() {
   const [error, setError] = useState(null);
 
   const fetchWebinars = useCallback(async () => {
-    if (!orgId) return;
+    if (!orgId) {
+      setWebinars([]);
+      setError('Organização não encontrada.');
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     const { data, error: err } = await supabase
       .from('webinars')
@@ -65,7 +70,12 @@ export function useWebinar(id) {
   const [error, setError] = useState(null);
 
   const fetchWebinar = useCallback(async () => {
-    if (!id) return;
+    if (!id) {
+      setWebinar(null);
+      setError('Webinar não encontrado.');
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     const { data, error: err } = await supabase
       .from('webinars')

@@ -48,6 +48,13 @@ export const ANALYTICS_EVENTS = {
   PITCH_REACHED: 'pitch_reached',
   OFFER_SHOWN: 'offer_shown',
   LIKE: 'like',
+  PURCHASE: 'purchase',
+  CONVERSION: 'conversion',
+};
+
+export const SALES_PROVIDER = {
+  HOTMART: 'hotmart',
+  SELFLUX: 'selflux',
 };
 
 // Marcos de assistência (minutos -> segundos) usados para disparar WATCH_15/30/45/60

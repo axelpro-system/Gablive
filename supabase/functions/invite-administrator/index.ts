@@ -71,12 +71,12 @@ serve(async (req) => {
       )
     }
 
-    // Check if user already exists in this org
+    // Check if user already exists in this org (using email column)
     const { data: existingProfile } = await supabaseAdmin
       .from("profiles")
-      .select("id, user_id")
+      .select("id, email")
       .eq("org_id", orgId)
-      .filter("user_id", "in", `(select id from auth.users where email = '${email}')`)
+      .eq("email", email.toLowerCase().trim())
       .maybeSingle()
 
     if (existingProfile) {
@@ -112,6 +112,7 @@ serve(async (req) => {
           user_id: inviteData.user.id,
           org_id: orgId,
           role: role,
+          email: email.toLowerCase().trim(),
           invited_by: caller.id,
           invite_status: "pending",
           invited_at: new Date().toISOString(),
@@ -119,13 +120,13 @@ serve(async (req) => {
 
       if (profileError) {
         console.error("Profile creation error:", profileError)
-        // Don't fail — the auth handle_new_user trigger will also create a profile
-        // But it creates with the default org. We need to update it.
+        // Fallback: update the auto-created profile from handle_new_user trigger
         const { error: updateError } = await supabaseAdmin
           .from("profiles")
           .update({
             org_id: orgId,
             role: role,
+            email: email.toLowerCase().trim(),
             invited_by: caller.id,
             invite_status: "pending",
             invited_at: new Date().toISOString(),
@@ -133,7 +134,7 @@ serve(async (req) => {
           .eq("user_id", inviteData.user.id)
 
         if (updateError) {
-          console.error("Profile update error:", updateError)
+          console.error("Profile update error (non-fatal):", updateError)
         }
       }
     }

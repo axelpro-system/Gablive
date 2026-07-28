@@ -1,0 +1,116 @@
+/* ============================================
+   PRELOADER — stage curtain. Change color via
+   --preloader-color.
+   ============================================ */
+
+.preloader {
+  --preloader-color: #101828;
+  --preloader-accent: #ef2b2d;
+
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+/* Curtain panels */
+.preloader__panel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: var(--preloader-color);
+  transition: transform 0.9s cubic-bezier(0.76, 0, 0.24, 1);
+  will-change: transform;
+}
+
+.preloader__panel--top {
+  top: 0;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.preloader__panel--bottom {
+  bottom: 0;
+}
+
+/* Reveal: split apart like a stage curtain */
+.preloader--reveal .preloader__panel--top {
+  transform: translateY(-100%);
+}
+.preloader--reveal .preloader__panel--bottom {
+  transform: translateY(100%);
+}
+
+/* Center logo + progress */
+.preloader__center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  z-index: 1;
+  transition: opacity 0.4s ease;
+}
+
+.preloader--reveal .preloader__center {
+  opacity: 0;
+}
+
+.preloader__logo {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #fff;
+  animation: preloader-pulse 1.6s ease-in-out infinite;
+}
+
+.preloader__logo span {
+  color: var(--preloader-accent);
+}
+
+.preloader__bar {
+  position: relative;
+  display: block;
+  width: 140px;
+  height: 3px;
+  border-radius: 100px;
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+
+.preloader__bar-fill {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--preloader-accent), #ff6b6b);
+  transform-origin: left;
+  animation: preloader-load 2.1s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+}
+
+@keyframes preloader-load {
+  0% {
+    transform: scaleX(0);
+  }
+  100% {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes preloader-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .preloader {
+    display: none;
+  }
+}

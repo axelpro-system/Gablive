@@ -1,18 +1,14 @@
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Video,
-  Zap,
-  MessageCircle,
-  Target,
-  BarChart3,
-  Building2,
   ChevronRight,
-  Play,
-  Check,
-  Star,
   ArrowRight,
+  Menu,
+  X,
+  ChevronDown,
+  CheckCircle2,
 } from 'lucide-react';
+import { useSupabase } from '../../contexts/SupabaseContext';
 import './LandingPage.css';
 
 /* ============================================
@@ -20,333 +16,625 @@ import './LandingPage.css';
    Wave 1 + Wave 2 (Complete)
    ============================================ */
 
-const PLANS = [
+const FAQ_ITEMS = [
   {
-    name: 'Starter',
-    price: 'R$ 97',
-    period: '/mês',
-    desc: 'Para quem está começando',
-    features: [
-      '3 webinários/mês',
-      '100 participantes por webinar',
-      'Chat ao vivo',
-      'Página de registro',
-      'Analytics básico',
-      'Suporte por e-mail',
-    ],
-    cta: 'Começar Grátis',
-    popular: false,
+    question: 'O GabLive substitui o Zoom ou o Vimeo?',
+    answer: 'O GabLive não é uma ferramenta de videoconferência. Ele organiza a jornada comercial do webinar e pode usar YouTube ou Vimeo como fonte de vídeo, conectando registro, sala, CTAs, comportamento e conversão.',
   },
   {
-    name: 'Pro',
-    price: 'R$ 297',
-    period: '/mês',
-    desc: 'Para quem quer escalar',
-    features: [
-      'Webinários ilimitados',
-      '500 participantes por webinar',
-      'Chat + CTAs inteligentes',
-      'Just-in-Time (evergreen)',
-      'Analytics completo',
-      'Notificações de prova social',
-      'Suporte prioritário',
-    ],
-    cta: 'Começar Agora',
-    popular: true,
+    question: 'Quais formatos de webinar a plataforma suporta?',
+    answer: 'A operação contempla webinars ao vivo, gravados e Just-in-Time. No formato JIT, cada participante entra em uma sessão que começa a partir da chegada dele, com interações sincronizadas.',
   },
   {
-    name: 'Enterprise',
-    price: 'R$ 997',
-    period: '/mês',
-    desc: 'Para grandes operações',
-    features: [
-      'Tudo do Pro',
-      'Participantes ilimitados',
-      'Multi-tenant com RLS',
-      'API personalizada',
-      'Integração CRM',
-      'Suporte dedicado',
-      'SLA garantido',
-    ],
-    cta: 'Falar com Vendas',
-    popular: false,
-  },
-];
-
-const TESTIMONIALS = [
-  {
-    name: 'Ana Silva',
-    role: 'CEO, TechCourse',
-    text: 'O Gablive transformou nosso funil de vendas. Taxa de conversão aumentou 340% depois que migramos para webinários Just-in-Time.',
-    rating: 5,
+    question: 'O que significa analytics por timestamp?',
+    answer: 'Significa relacionar eventos do funil ao tempo do vídeo. Assim, retenção, abertura da oferta, clique no CTA e outras ações podem ser analisadas no momento em que aconteceram.',
   },
   {
-    name: 'Pedro Santos',
-    role: 'Diretor de Marketing, EduPlatform',
-    text: 'O chat ao vivo e as notificações de prova social fazem uma diferença enorme. Nossos participantes sentem que estão em um evento real.',
-    rating: 5,
+    question: 'Agências conseguem separar os dados de cada cliente?',
+    answer: 'Sim. Cada organização é um tenant isolado por Row-Level Security. Webinars, leads, membros e métricas ficam associados ao contexto correto no banco de dados.',
   },
   {
-    name: 'Maria Oliveira',
-    role: 'Fundadora, ScaleUP',
-    text: 'Finalmente uma plataforma de webinars brasileira que funciona. Analytics completos e suporte excepcional.',
-    rating: 5,
-  },
-];
-
-const FEATURES = [
-  {
-    icon: Video,
-    title: 'Webinários ao vivo',
-    desc: 'Transmita ao vivo para sua audiência com qualidade profissional. Suporte a YouTube e Vimeo.',
+    question: 'Preciso saber programar para configurar um webinar?',
+    answer: 'Não. A proposta é permitir que o operador configure páginas, automações, CTAs e interações pelo painel. Integrações avançadas podem exigir apoio técnico, dependendo do fluxo.',
   },
   {
-    icon: Zap,
-    title: 'Just-in-Time',
-    desc: 'Webinários evergreen que iniciam quando o participante entra. Sem espera, sem fricção.',
-  },
-  {
-    icon: MessageCircle,
-    title: 'Chat ao vivo',
-    desc: 'Interação em tempo real com seus participantes. Mensagens, enquetes e prova social.',
-  },
-  {
-    icon: Target,
-    title: 'CTAs Inteligentes',
-    desc: 'Ofertas que aparecem no momento certo do webinar. Banners com preço e promoção.',
-  },
-  {
-    icon: BarChart3,
-    title: 'Analytics',
-    desc: 'Acompanhe registros, taxa de comparecimento, conversão e tempo médio de exibição.',
-  },
-  {
-    icon: Building2,
-    title: 'Multi-tenant',
-    desc: 'Isolamento total por organização com segurança RLS. Seus dados protegidos.',
+    question: 'Quando receberei acesso?',
+    answer: 'A lista de espera será usada para organizar os primeiros acessos e comunicar a disponibilidade. Entrar na lista não cria cobrança nem compromisso de contratação.',
   },
 ];
 
 function Navbar() {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const toggleRef = useRef(null);
+  const panelRef = useRef(null);
+
+  useEffect(() => {
+    const handleScroll = () => setIsScrolled(window.scrollY > 16);
+    handleScroll();
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  useEffect(() => {
+    if (!isOpen) return undefined;
+
+    const focusable = panelRef.current?.querySelectorAll('a, button');
+    const first = focusable?.[0];
+    const last = focusable?.[focusable.length - 1];
+    const previousOverflow = document.body.style.overflow;
+
+    document.body.style.overflow = 'hidden';
+    first?.focus();
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        setIsOpen(false);
+        toggleRef.current?.focus();
+        return;
+      }
+
+      if (event.key !== 'Tab' || !first || !last) return;
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen]);
+
+  const closeMenu = () => setIsOpen(false);
+
   return (
-    <nav className="lp-navbar">
-      <Link to="/" className="lp-navbar__logo">
-        gab<span>live</span>
-      </Link>
+    <nav className={`lp-navbar${isScrolled ? ' is-scrolled' : ''}`} aria-label="Navegação principal">
+      <div className="lp-navbar__inner">
+        <Link to="/" className="lp-navbar__logo" aria-label="GabLive — início">
+          <img src="/logo-dark.svg" alt="" width="126" height="30" />
+        </Link>
 
-      <ul className="lp-navbar__links">
-        <li><a href="#features">Produto</a></li>
-        <li><a href="#pricing">Preços</a></li>
-        <li><a href="#testimonials">Depoimentos</a></li>
-      </ul>
+        <ul className="lp-navbar__links">
+          <li><a href="#features">Produto</a></li>
+          <li><a href="#how-it-works">Como funciona</a></li>
+          <li><a href="#agencies">Para agências</a></li>
+          <li><a href="#faq">FAQ</a></li>
+        </ul>
 
-      <Link to="/auth/register" className="lp-navbar__cta">
-        Começar Agora
-        <ChevronRight size={16} />
-      </Link>
+        <a href="#waitlist" className="lp-navbar__cta">
+          Entrar na lista
+          <ArrowRight size={16} aria-hidden="true" />
+        </a>
 
-      <button className="lp-navbar__mobile-toggle" aria-label="Menu">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <line x1="3" y1="6" x2="21" y2="6" />
-          <line x1="3" y1="12" x2="21" y2="12" />
-          <line x1="3" y1="18" x2="21" y2="18" />
-        </svg>
-      </button>
+        <button
+          ref={toggleRef}
+          className="lp-navbar__mobile-toggle"
+          type="button"
+          aria-label={isOpen ? 'Fechar menu' : 'Abrir menu'}
+          aria-expanded={isOpen}
+          aria-controls="lp-mobile-menu"
+          onClick={() => setIsOpen((open) => !open)}
+        >
+          {isOpen ? <X size={22} /> : <Menu size={22} />}
+        </button>
+      </div>
+
+      <div
+        id="lp-mobile-menu"
+        ref={panelRef}
+        className={`lp-navbar__mobile-panel${isOpen ? ' is-open' : ''}`}
+        aria-hidden={!isOpen}
+      >
+        <a href="#features" onClick={closeMenu}>Produto</a>
+        <a href="#how-it-works" onClick={closeMenu}>Como funciona</a>
+        <a href="#agencies" onClick={closeMenu}>Para agências</a>
+        <a href="#faq" onClick={closeMenu}>FAQ</a>
+        <a href="#waitlist" className="lp-navbar__mobile-cta" onClick={closeMenu}>
+          Entrar na lista de espera
+          <ArrowRight size={18} aria-hidden="true" />
+        </a>
+      </div>
     </nav>
+  );
+}
+
+function ReadingProgress() {
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    const update = () => {
+      const scrollable = document.documentElement.scrollHeight - window.innerHeight;
+      setProgress(scrollable > 0 ? Math.min(window.scrollY / scrollable, 1) : 0);
+    };
+    update();
+    window.addEventListener('scroll', update, { passive: true });
+    window.addEventListener('resize', update, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', update);
+      window.removeEventListener('resize', update);
+    };
+  }, []);
+
+  return (
+    <div className="lp-progress" aria-hidden="true">
+      <span style={{ transform: `scaleX(${progress})` }} />
+    </div>
   );
 }
 
 function Hero() {
   return (
-    <section className="lp-hero">
+    <section className="lp-hero" aria-labelledby="lp-hero-title">
+      <div className="lp-hero__grid" aria-hidden="true" />
+      <div className="lp-hero__beam" aria-hidden="true" />
       <div className="lp-hero__container">
         <div className="lp-hero__content">
-          <div className="lp-hero__badge">
-            <Zap size={14} />
-            Plataforma de Webinários
-          </div>
+          <p className="lp-hero__eyebrow">
+            <span aria-hidden="true" />
+            Webinar analytics para operações de venda
+          </p>
 
-          <h1 className="lp-hero__title">
-            Converta mais com <span>webinários ao vivo</span>
+          <h1 className="lp-hero__title" id="lp-hero-title">
+            Saiba em que segundo do seu webinar a venda é decidida
           </h1>
 
           <p className="lp-hero__subtitle">
-            Crie webinários que vendem. Ao vivo, gravados ou Just-in-Time.
-            Com chat, CTAs inteligentes e analytics completos.
+            Vídeo, página, CTA e conversão na mesma linha do tempo.
+            O GabLive mostra o que acontece antes da venda — sem planilhas,
+            integrações frágeis ou métricas isoladas.
           </p>
 
           <div className="lp-hero__actions">
-            <Link to="/auth/register" className="lp-hero__cta-primary">
-              Começar Grátis
-              <ChevronRight size={18} />
-            </Link>
-            <a href="#demo" className="lp-hero__cta-secondary">
-              <Play size={18} />
-              Ver Demo
+            <a className="lp-hero__cta-primary" href="#waitlist">
+              Entrar na lista de espera
+              <ArrowRight size={18} aria-hidden="true" />
+            </a>
+            <a className="lp-hero__cta-secondary" href="#features">
+              Explorar o produto
+              <ChevronRight size={17} aria-hidden="true" />
             </a>
           </div>
+
+          <ul className="lp-hero__signals" aria-label="Diferenciais principais">
+            <li>Just-in-Time nativo</li>
+            <li>Analytics por timestamp</li>
+            <li>Multi-tenant para agências</li>
+          </ul>
         </div>
 
-        <div className="lp-hero__mockup">
-          <div className="lp-hero__mockup-bar">
-            <span className="lp-hero__mockup-dot lp-hero__mockup-dot--red" />
-            <span className="lp-hero__mockup-dot lp-hero__mockup-dot--yellow" />
-            <span className="lp-hero__mockup-dot lp-hero__mockup-dot--green" />
+        <div className="lp-hero__visual">
+          <div className="lp-hero__visual-frame">
+            <div className="lp-hero__visual-bar" aria-hidden="true">
+              <span />
+              <span />
+              <span />
+              <small>Conversão por timestamp</small>
+            </div>
+            <picture>
+              <source
+                type="image/avif"
+                srcSet="/product-funnel-timestamp-800.avif 800w, /product-funnel-timestamp-1400.avif 1400w"
+                sizes="(max-width: 1080px) calc(100vw - 40px), 68vw"
+              />
+              <source
+                type="image/webp"
+                srcSet="/product-funnel-timestamp-800.webp 800w, /product-funnel-timestamp-1400.webp 1400w"
+                sizes="(max-width: 1080px) calc(100vw - 40px), 68vw"
+              />
+              <img
+                src="/product-funnel-timestamp.png"
+                width="1672"
+                height="941"
+                fetchPriority="high"
+                decoding="async"
+                alt="Visualização do GabLive conectando momentos do webinar, ações do espectador e conversões em uma linha do tempo"
+              />
+            </picture>
           </div>
-          <div className="lp-hero__mockup-content">
-            <div className="lp-hero__mockup-video">
-              <div className="lp-hero__mockup-play">
-                <Play size={20} color="#fff" fill="#fff" />
-              </div>
-            </div>
-            <div className="lp-hero__mockup-chat">
-              <div className="lp-hero__mockup-msg">
-                <span className="lp-hero__mockup-msg-dot" />
-                Ana: Adorei essa aula!
-              </div>
-              <div className="lp-hero__mockup-msg">
-                <span className="lp-hero__mockup-msg-dot" />
-                Pedro: Quando abre a oferta?
-              </div>
-              <div className="lp-hero__mockup-msg">
-                <span className="lp-hero__mockup-msg-dot" />
-                Maria: Já comprei! 🎉
-              </div>
-            </div>
+          <div className="lp-hero__metric" aria-hidden="true">
+            <span>Momento de conversão</span>
+            <strong>42:18</strong>
+            <small>CTA + pico de retenção</small>
           </div>
         </div>
       </div>
+      <div className="lp-hero__fade" aria-hidden="true" />
     </section>
   );
 }
 
-function Features() {
+function ProductStory() {
   return (
-    <section className="lp-features" id="features">
-      <div className="lp-features__container">
-        <div className="lp-features__header">
-          <h2 className="lp-features__title">Tudo que você precisa para converter</h2>
-          <p className="lp-features__subtitle">
-            Ferramentas completas para criar, apresentar e converter com webinários.
-          </p>
-        </div>
-
-        <div className="lp-features__grid">
-          {FEATURES.map(({ icon: Icon, title, desc }) => (
-            <div className="lp-feature-card" key={title}>
-              <div className="lp-feature-card__icon">
-                <Icon size={24} />
-              </div>
-              <h3 className="lp-feature-card__title">{title}</h3>
-              <p className="lp-feature-card__desc">{desc}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function Pricing() {
-  return (
-    <section className="lp-pricing" id="pricing">
-      <div className="lp-pricing__container">
-        <div className="lp-pricing__header">
-          <h2 className="lp-pricing__title">Planos para cada fase</h2>
-          <p className="lp-pricing__subtitle">
-            Comece grátis. Escale quando estiver pronto.
-          </p>
-        </div>
-
-        <div className="lp-pricing__grid">
-          {PLANS.map((plan) => (
-            <div
-              className={`lp-pricing-card ${plan.popular ? 'lp-pricing-card--popular' : ''}`}
-              key={plan.name}
-            >
-              {plan.popular && (
-                <span className="lp-pricing-card__badge">Mais Popular</span>
-              )}
-              <h3 className="lp-pricing-card__name">{plan.name}</h3>
-              <p className="lp-pricing-card__desc">{plan.desc}</p>
-              <div className="lp-pricing-card__price">
-                <span className="lp-pricing-card__amount">{plan.price}</span>
-                <span className="lp-pricing-card__period">{plan.period}</span>
-              </div>
-              <ul className="lp-pricing-card__features">
-                {plan.features.map((f) => (
-                  <li key={f}>
-                    <Check size={16} />
-                    {f}
-                  </li>
-                ))}
-              </ul>
-              <Link
-                to="/auth/register"
-                className={`lp-pricing-card__cta ${plan.popular ? 'lp-pricing-card__cta--primary' : ''}`}
-              >
-                {plan.cta}
-              </Link>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function Testimonials() {
-  return (
-    <section className="lp-testimonials" id="testimonials">
-      <div className="lp-testimonials__container">
-        <div className="lp-testimonials__header">
-          <h2 className="lp-testimonials__title">
-            Criadores que já convertem com o Gablive
-          </h2>
-          <p className="lp-testimonials__subtitle">
-            Veja o que nossos clientes dizem sobre a plataforma.
-          </p>
-        </div>
-
-        <div className="lp-testimonials__grid">
-          {TESTIMONIALS.map((t) => (
-            <div className="lp-testimonial-card" key={t.name}>
-              <div className="lp-testimonial-card__stars">
-                {Array.from({ length: t.rating }).map((_, i) => (
-                  <Star key={i} size={16} fill="var(--gablive-brand-red)" color="var(--gablive-brand-red)" />
-                ))}
-              </div>
-              <p className="lp-testimonial-card__text">&ldquo;{t.text}&rdquo;</p>
-              <div className="lp-testimonial-card__author">
-                <div className="lp-testimonial-card__avatar">
-                  {t.name.split(' ').map((n) => n[0]).join('')}
-                </div>
-                <div>
-                  <strong className="lp-testimonial-card__name">{t.name}</strong>
-                  <span className="lp-testimonial-card__role">{t.role}</span>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function CtaFinal() {
-  return (
-    <section className="lp-cta" id="cta">
-      <div className="lp-cta__container">
-        <h2 className="lp-cta__title">Pronto para converter?</h2>
-        <p className="lp-cta__subtitle">
-          Comece gratuitamente. Sem cartão de crédito. Cancele quando quiser.
+    <section className="lp-story" id="features" aria-labelledby="lp-story-title">
+      <header className="lp-story__intro">
+        <p className="lp-story__kicker">Uma linha do tempo. A operação inteira.</p>
+        <h2 id="lp-story-title">Analytics de webinar sempre existiu. Só nunca foi analytics de verdade.</h2>
+        <p>
+          Visualizações isoladas não explicam conversão. O GabLive conecta o
+          que o participante viu, fez e comprou — no mesmo contexto.
         </p>
-        <Link to="/auth/register" className="lp-cta__btn">
-          Comece Grátis Agora
-          <ArrowRight size={20} />
-        </Link>
-        <span className="lp-cta__note">Sem cartão de crédito necessário</span>
+      </header>
+
+      <article className="lp-story__chapter lp-story__chapter--integrated">
+        <div className="lp-story__copy">
+          <span className="lp-story__index">01 / Operação integrada</span>
+          <h3>O funil deixa de ser uma coleção de ferramentas</h3>
+          <p>
+            Página de registro, sala, vídeo, chat, oferta e follow-up operam
+            juntos. Cada evento passa a pertencer ao mesmo fluxo de dados.
+          </p>
+          <ul>
+            <li>Páginas e lembretes conectados ao webinar</li>
+            <li>CTAs sincronizados com a apresentação</li>
+            <li>Leads e comportamento em uma única operação</li>
+          </ul>
+        </div>
+        <figure className="lp-story__image">
+          <picture>
+            <source
+              type="image/avif"
+              srcSet="/product-integrated-funnel-800.avif 800w, /product-integrated-funnel-1400.avif 1400w"
+              sizes="(max-width: 960px) calc(100vw - 40px), 58vw"
+            />
+            <source
+              type="image/webp"
+              srcSet="/product-integrated-funnel-800.webp 800w, /product-integrated-funnel-1400.webp 1400w"
+              sizes="(max-width: 960px) calc(100vw - 40px), 58vw"
+            />
+            <img
+              src="/product-integrated-funnel.png"
+              width="1486"
+              height="1080"
+              loading="lazy"
+              decoding="async"
+              alt="Representação do GabLive unificando ferramentas fragmentadas em um funil controlado"
+            />
+          </picture>
+        </figure>
+      </article>
+
+      <article className="lp-story__chapter lp-story__chapter--analytics">
+        <div className="lp-story__analytics-ui" aria-label="Exemplo visual de analytics por timestamp">
+          <div className="lp-story__ui-head">
+            <div><small>Webinar evergreen</small><strong>Funil principal</strong></div>
+            <span>Últimos 30 dias</span>
+          </div>
+          <div className="lp-story__ui-metrics">
+            <div><small>Inscritos</small><strong>—</strong><span>Dados da operação</span></div>
+            <div><small>Assistiram à oferta</small><strong>—</strong><span>Por timestamp</span></div>
+            <div><small>Cliques no CTA</small><strong>—</strong><span>Evento atribuído</span></div>
+          </div>
+          <div className="lp-story__chart">
+            <div className="lp-story__chart-labels"><span>Retenção</span><span>Evento de conversão</span></div>
+            <svg viewBox="0 0 800 230" role="img" aria-label="Curva ilustrativa de retenção ao longo do webinar">
+              <defs>
+                <linearGradient id="retentionArea" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#ef2b2d" stopOpacity=".24" />
+                  <stop offset="100%" stopColor="#ef2b2d" stopOpacity="0" />
+                </linearGradient>
+              </defs>
+              <path className="lp-story__chart-area" d="M0 45 C90 52 130 80 210 76 S340 112 420 105 S520 155 610 145 S710 177 800 165 L800 230 L0 230 Z" />
+              <path className="lp-story__chart-line" d="M0 45 C90 52 130 80 210 76 S340 112 420 105 S520 155 610 145 S710 177 800 165" />
+              <line className="lp-story__chart-event" x1="515" y1="20" x2="515" y2="215" />
+              <circle className="lp-story__chart-point" cx="515" cy="149" r="6" />
+            </svg>
+            <div className="lp-story__timeline">
+              <span>00:00</span><span>15:00</span><span>30:00</span><strong>42:18</strong><span>60:00</span>
+            </div>
+          </div>
+        </div>
+        <div className="lp-story__copy">
+          <span className="lp-story__index">02 / Analytics por timestamp</span>
+          <h3>Descubra o momento que mudou a decisão</h3>
+          <p>
+            Compare retenção, abertura da oferta e clique no CTA na mesma
+            escala temporal. Ajuste roteiro e mídia a partir do mecanismo,
+            não de uma média geral.
+          </p>
+          <a href="#waitlist">Quero enxergar meu funil <ArrowRight size={17} aria-hidden="true" /></a>
+        </div>
+      </article>
+
+      <article className="lp-story__chapter lp-story__chapter--jit">
+        <div className="lp-story__copy">
+          <span className="lp-story__index">03 / Just-in-Time</span>
+          <h3>O próximo webinar começa quando o lead chega</h3>
+          <p>
+            Uma experiência evergreen com sensação de evento: sala de espera,
+            chat, enquetes, prova social e oferta seguem a linha do tempo
+            configurada pela operação.
+          </p>
+          <ul>
+            <li>Atraso inicial configurável</li>
+            <li>Interações sincronizadas ao vídeo</li>
+            <li>Replay e follow-up automatizados</li>
+          </ul>
+        </div>
+        <div className="lp-story__jit-ui" aria-label="Exemplo de configuração Just-in-Time">
+          <div className="lp-story__jit-head">
+            <span><i aria-hidden="true" /> Webinar ativo</span>
+            <small>Just-in-Time</small>
+          </div>
+          <div className="lp-story__jit-clock">
+            <small>Próxima sessão</small>
+            <strong>começa em 02:00</strong>
+            <span>Entrada contínua · experiência sincronizada</span>
+          </div>
+          <div className="lp-story__jit-track">
+            <div className="lp-story__jit-line"><span className="is-active" /><span /><span /><span /></div>
+            <div className="lp-story__jit-events">
+              <div><strong>00:00</strong><span>Início</span></div>
+              <div><strong>18:30</strong><span>Enquete</span></div>
+              <div><strong>42:18</strong><span>Oferta</span></div>
+              <div><strong>58:00</strong><span>Follow-up</span></div>
+            </div>
+          </div>
+          <div className="lp-story__jit-footer">
+            <span>Chat sincronizado</span><span>CTA programado</span><span>Analytics ativo</span>
+          </div>
+        </div>
+      </article>
+    </section>
+  );
+}
+
+function HowItWorks() {
+  return (
+    <>
+      <section className="lp-flow" id="how-it-works" aria-labelledby="lp-flow-title">
+        <div className="lp-flow__head">
+          <p>Como funciona</p>
+          <h2 id="lp-flow-title">Da configuração à decisão de mídia, sem trocar de contexto.</h2>
+        </div>
+        <ol className="lp-flow__list">
+          <li>
+            <span>01</span>
+            <div>
+              <small>Configuração</small>
+              <h3>Modele a experiência</h3>
+              <p>Defina formato, página, identidade, sala de espera e automações do webinar.</p>
+            </div>
+            <strong>Ao vivo · Gravado · JIT</strong>
+          </li>
+          <li>
+            <span>02</span>
+            <div>
+              <small>Orquestração</small>
+              <h3>Programe os momentos de venda</h3>
+              <p>Sincronize chat, enquetes, prova social e ofertas com pontos específicos do vídeo.</p>
+            </div>
+            <strong>Timeline única</strong>
+          </li>
+          <li>
+            <span>03</span>
+            <div>
+              <small>Distribuição</small>
+              <h3>Publique uma jornada contínua</h3>
+              <p>Registro, lembretes, apresentação, replay e follow-up compartilham a mesma operação.</p>
+            </div>
+            <strong>Sem código</strong>
+          </li>
+          <li>
+            <span>04</span>
+            <div>
+              <small>Otimização</small>
+              <h3>Leia o comportamento no tempo</h3>
+              <p>Relacione retenção, interações e cliques para encontrar os pontos que mudam conversão.</p>
+            </div>
+            <strong>Dados acionáveis</strong>
+          </li>
+        </ol>
+        <a className="lp-flow__cta" href="#waitlist">
+          Quero operar com esse nível de controle
+          <ArrowRight size={18} aria-hidden="true" />
+        </a>
+      </section>
+
+      <section className="lp-agencies" id="agencies" aria-labelledby="lp-agencies-title">
+        <div className="lp-agencies__inner">
+          <div className="lp-agencies__copy">
+            <p>Para agências</p>
+            <h2 id="lp-agencies-title">Vários clientes. Uma central. Nenhum dado misturado.</h2>
+            <p>
+              O multi-tenant é parte da arquitetura, não uma pasta com etiquetas.
+              Cada organização mantém webinars, leads, equipe e analytics isolados
+              no banco de dados.
+            </p>
+            <dl>
+              <div>
+                <dt>Isolamento real</dt>
+                <dd>Row-Level Security aplicada aos dados de cada organização.</dd>
+              </div>
+              <div>
+                <dt>Troca de contexto</dt>
+                <dd>Administre operações distintas a partir do mesmo acesso.</dd>
+              </div>
+              <div>
+                <dt>Visão consolidada</dt>
+                <dd>Compare funis sem transformar clientes em uma planilha única.</dd>
+              </div>
+            </dl>
+          </div>
+          <figure className="lp-agencies__visual">
+            <picture>
+              <source
+                type="image/avif"
+                srcSet="/product-multitenant-800.avif 800w, /product-multitenant-1400.avif 1400w"
+                sizes="(max-width: 960px) calc(100vw - 40px), 58vw"
+              />
+              <source
+                type="image/webp"
+                srcSet="/product-multitenant-800.webp 800w, /product-multitenant-1400.webp 1400w"
+                sizes="(max-width: 960px) calc(100vw - 40px), 58vw"
+              />
+              <img
+                src="/product-multitenant.png"
+                width="1672"
+                height="941"
+                loading="lazy"
+                decoding="async"
+                alt="Central de comando representando múltiplas operações de webinar isoladas no GabLive"
+              />
+            </picture>
+            <figcaption>
+              <span>Organização ativa</span>
+              <strong>Contexto isolado</strong>
+              <small>Webinars · Leads · Analytics · Equipe</small>
+            </figcaption>
+          </figure>
+        </div>
+      </section>
+    </>
+  );
+}
+
+function FAQ() {
+  const [openIndex, setOpenIndex] = useState(0);
+
+  return (
+    <section className="lp-faq" id="faq" aria-labelledby="lp-faq-title">
+      <div className="lp-faq__head">
+        <p>Dúvidas objetivas</p>
+        <h2 id="lp-faq-title">Antes de entrar na lista.</h2>
+      </div>
+      <div className="lp-faq__items">
+        {FAQ_ITEMS.map((item, index) => {
+          const isOpen = openIndex === index;
+          return (
+            <article className={`lp-faq__item${isOpen ? ' is-open' : ''}`} key={item.question}>
+              <h3>
+                <button
+                  type="button"
+                  aria-expanded={isOpen}
+                  aria-controls={`faq-panel-${index}`}
+                  id={`faq-button-${index}`}
+                  onClick={() => setOpenIndex(isOpen ? -1 : index)}
+                >
+                  <span>{item.question}</span>
+                  <ChevronDown size={20} aria-hidden="true" />
+                </button>
+              </h3>
+              <div
+                className="lp-faq__answer"
+                id={`faq-panel-${index}`}
+                role="region"
+                aria-labelledby={`faq-button-${index}`}
+                hidden={!isOpen}
+              >
+                <p>{item.answer}</p>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function Waitlist() {
+  const supabase = useSupabase();
+  const [status, setStatus] = useState('idle');
+  const [message, setMessage] = useState('');
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const data = new window.FormData(form);
+    const email = String(data.get('email') || '').trim().toLowerCase();
+    const name = String(data.get('name') || '').trim();
+    const company = String(data.get('company') || '').trim();
+    const honeypot = String(data.get('website') || '');
+
+    if (honeypot) return;
+    if (!email || email.length > 254 || !email.includes('@')) {
+      setStatus('error');
+      setMessage('Informe um e-mail válido.');
+      return;
+    }
+
+    setStatus('loading');
+    setMessage('');
+
+    const { error } = await supabase.from('waitlist_entries').insert({
+      email,
+      name: name || null,
+      company: company || null,
+      source: 'landing-page',
+    });
+
+    if (error) {
+      if (error.code === '23505') {
+        setStatus('success');
+        setMessage('Este e-mail já está na lista. Avisaremos quando o acesso estiver disponível.');
+        return;
+      }
+      setStatus('error');
+      setMessage('Não foi possível registrar agora. Tente novamente em alguns instantes.');
+      return;
+    }
+
+    form.reset();
+    setStatus('success');
+    setMessage('Entrada confirmada. Avisaremos quando o acesso estiver disponível.');
+  };
+
+  return (
+    <section className="lp-waitlist" id="waitlist" aria-labelledby="lp-waitlist-title">
+      <div className="lp-waitlist__inner">
+        <div className="lp-waitlist__copy">
+          <p>Acesso antecipado</p>
+          <h2 id="lp-waitlist-title">Pare de decidir mídia com uma média.</h2>
+          <p>
+            Entre na lista para acompanhar a disponibilidade do GabLive e
+            receber as informações dos primeiros acessos.
+          </p>
+          <ul>
+            <li>Sem cobrança</li>
+            <li>Sem compromisso de contratação</li>
+            <li>Comunicação apenas sobre o produto</li>
+          </ul>
+        </div>
+
+        {status === 'success' ? (
+          <div className="lp-waitlist__success" role="status">
+            <CheckCircle2 size={28} aria-hidden="true" />
+            <h3>Você está na lista.</h3>
+            <p>{message}</p>
+          </div>
+        ) : (
+          <form className="lp-waitlist__form" onSubmit={handleSubmit} noValidate>
+            <div className="lp-waitlist__field">
+              <label htmlFor="waitlist-name">Nome</label>
+              <input id="waitlist-name" name="name" type="text" autoComplete="name" maxLength="120" placeholder="Como devemos chamar você?" />
+            </div>
+            <div className="lp-waitlist__field">
+              <label htmlFor="waitlist-email">E-mail profissional <span aria-hidden="true">*</span></label>
+              <input id="waitlist-email" name="email" type="email" autoComplete="email" maxLength="254" placeholder="voce@empresa.com" required />
+            </div>
+            <div className="lp-waitlist__field">
+              <label htmlFor="waitlist-company">Empresa ou operação</label>
+              <input id="waitlist-company" name="company" type="text" autoComplete="organization" maxLength="160" placeholder="Nome da operação" />
+            </div>
+            <div className="lp-waitlist__honeypot" aria-hidden="true">
+              <label htmlFor="waitlist-website">Website</label>
+              <input id="waitlist-website" name="website" type="text" tabIndex="-1" autoComplete="off" />
+            </div>
+            <button type="submit" disabled={status === 'loading'}>
+              {status === 'loading' ? 'Registrando…' : 'Entrar na lista de espera'}
+              {status !== 'loading' && <ArrowRight size={18} aria-hidden="true" />}
+            </button>
+            <p className="lp-waitlist__privacy" id="privacy">
+              Ao enviar, você concorda com o uso dos dados para comunicações sobre o GabLive.
+            </p>
+            {message && <p className="lp-waitlist__error" role="alert">{message}</p>}
+          </form>
+        )}
       </div>
     </section>
   );
@@ -358,109 +646,123 @@ function Footer() {
       <div className="lp-footer__container">
         <div className="lp-footer__grid">
           <div className="lp-footer__brand">
-            <Link to="/" className="lp-footer__logo">
-              gab<span>live</span>
+            <Link to="/" className="lp-footer__logo" aria-label="GabLive — início">
+              <img src="/logo-dark.svg" alt="" width="126" height="30" />
             </Link>
             <p className="lp-footer__tagline">
-              Plataforma de webinários para funil de vendas.
+              Webinar analytics para operações que vendem conhecimento.
             </p>
           </div>
 
           <div className="lp-footer__col">
             <h4>Produto</h4>
             <ul>
-              <li><a href="#features">Funcionalidades</a></li>
-              <li><a href="#pricing">Preços</a></li>
-              <li><a href="#demo">Demo</a></li>
-              <li><a href="#testimonials">Depoimentos</a></li>
+              <li><a href="#features">Visão geral</a></li>
+              <li><a href="#how-it-works">Como funciona</a></li>
+              <li><a href="#agencies">Para agências</a></li>
+              <li><a href="#faq">FAQ</a></li>
             </ul>
           </div>
 
           <div className="lp-footer__col">
-            <h4>Recursos</h4>
+            <h4>Acesso</h4>
             <ul>
-              <li><a href="#">Documentação</a></li>
-              <li><a href="#">API</a></li>
-              <li><a href="#">Blog</a></li>
-              <li><a href="#">Suporte</a></li>
+              <li><a href="#waitlist">Lista de espera</a></li>
+              <li><Link to="/auth/login">Entrar</Link></li>
             </ul>
           </div>
 
           <div className="lp-footer__col">
-            <h4>Empresa</h4>
+            <h4>Legal</h4>
             <ul>
-              <li><a href="#">Sobre</a></li>
-              <li><a href="#">Contato</a></li>
-              <li><a href="#">Termos de Uso</a></li>
-              <li><a href="#">Privacidade</a></li>
+              <li><a href="#privacy">Privacidade</a></li>
+              <li><a href="mailto:contato@gablive.com.br">Contato</a></li>
             </ul>
           </div>
         </div>
 
         <div className="lp-footer__bottom">
           <span>&copy; 2026 Gablive. Todos os direitos reservados.</span>
-          <div className="lp-footer__social">
-            <a href="#" aria-label="Instagram">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="2" y="2" width="20" height="20" rx="5" />
-                <circle cx="12" cy="12" r="5" />
-                <circle cx="17.5" cy="6.5" r="1.5" fill="currentColor" stroke="none" />
-              </svg>
-            </a>
-            <a href="#" aria-label="YouTube">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19.1c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z" />
-                <polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02" fill="currentColor" stroke="none" />
-              </svg>
-            </a>
-            <a href="#" aria-label="LinkedIn">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
-                <rect x="2" y="9" width="4" height="12" />
-                <circle cx="4" cy="4" r="2" />
-              </svg>
-            </a>
-          </div>
+          <span>Dados para decidir. Controle para operar.</span>
         </div>
       </div>
     </footer>
   );
 }
 
+function CookieBar() {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    setVisible(window.localStorage.getItem('gablive-cookie-notice') !== 'accepted');
+  }, []);
+
+  const accept = () => {
+    window.localStorage.setItem('gablive-cookie-notice', 'accepted');
+    setVisible(false);
+  };
+
+  return (
+    <aside className={`lp-cookie${visible ? ' is-visible' : ''}`} aria-label="Aviso de privacidade">
+      <p>
+        Usamos apenas recursos essenciais para o funcionamento da página.
+        <a href="#privacy"> Saiba como tratamos seus dados.</a>
+      </p>
+      <button type="button" onClick={accept}>Entendi</button>
+    </aside>
+  );
+}
+
 export default function LandingPage() {
   useEffect(() => {
     const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (prefersReduced) return;
+    if (prefersReduced || !('IntersectionObserver' in window)) return undefined;
 
-    const sections = document.querySelectorAll('.lp-features, .lp-pricing, .lp-testimonials, .lp-cta');
-    sections.forEach((s) => { s.style.opacity = '0'; s.style.transform = 'translateY(24px)'; s.style.transition = 'opacity 0.6s ease, transform 0.6s ease'; });
+    const elements = document.querySelectorAll(
+      '.lp-story__intro, .lp-story__chapter, .lp-flow__head, .lp-flow__list li, .lp-agencies__copy, .lp-agencies__visual, .lp-faq__head, .lp-faq__items, .lp-waitlist__copy, .lp-waitlist__form',
+    );
+    elements.forEach((element) => element.classList.add('lp-reveal'));
 
-    const observer = new IntersectionObserver(
+    const observer = new window.IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            entry.target.style.opacity = '1';
-            entry.target.style.transform = 'translateY(0)';
+            entry.target.classList.add('is-visible');
             observer.unobserve(entry.target);
           }
         });
       },
-      { threshold: 0.15 }
+      { threshold: 0.12, rootMargin: '0px 0px -8% 0px' },
     );
 
-    sections.forEach((s) => observer.observe(s));
-    return () => observer.disconnect();
+    elements.forEach((element, index) => {
+      element.style.setProperty('--reveal-delay', `${Math.min(index % 4, 3) * 60}ms`);
+      observer.observe(element);
+    });
+
+    return () => {
+      observer.disconnect();
+      elements.forEach((element) => {
+        element.classList.remove('lp-reveal', 'is-visible');
+        element.style.removeProperty('--reveal-delay');
+      });
+    };
   }, []);
 
   return (
     <div className="lp">
+      <a className="lp-skip" href="#main-content">Pular para o conteúdo</a>
+      <ReadingProgress />
       <Navbar />
-      <Hero />
-      <Features />
-      <Pricing />
-      <Testimonials />
-      <CtaFinal />
+      <main id="main-content">
+        <Hero />
+        <ProductStory />
+        <HowItWorks />
+        <FAQ />
+        <Waitlist />
+      </main>
       <Footer />
+      <CookieBar />
     </div>
   );
 }

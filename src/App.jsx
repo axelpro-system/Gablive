@@ -19,6 +19,8 @@ const AdminGatewayPage = lazy(() => import('./pages/dashboard/AdminGatewayPage')
 const GlobalAnalyticsPage = lazy(() => import('./pages/dashboard/GlobalAnalyticsPage'));
 const LeadsPage = lazy(() => import('./pages/dashboard/LeadsPage'));
 const SettingsPage = lazy(() => import('./pages/dashboard/SettingsPage'));
+const IntegrationsPage = lazy(() => import('./pages/dashboard/IntegrationsPage'));
+const AIAgentsPage = lazy(() => import('./pages/dashboard/AIAgentsPage'));
 const AuditLogPage = lazy(() => import('./pages/dashboard/AuditLogPage'));
 const UsersPage = lazy(() => import('./pages/dashboard/UsersPage'));
 const PageTemplatesEditor = lazy(() => import('./components/editor/PageTemplatesEditor'));
@@ -130,6 +132,8 @@ export default function App() {
             <Route path="/analytics" element={<GlobalAnalyticsPage />} />
             <Route path="/leads" element={<LeadsPage />} />
             <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/integrations" element={<IntegrationsPage />} />
+            <Route path="/ai-agents" element={<AIAgentsPage />} />
             <Route path="/admin" element={<AdminGatewayPage />} />
             <Route path="/audit" element={<AuditLogPage />} />
             <Route path="/users" element={<UsersPage />} />

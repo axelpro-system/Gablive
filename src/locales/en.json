@@ -141,7 +141,11 @@
     "registrationLink": "Registration link",
     "roomLink": "Room link",
     "goLive": "Go live",
+    "goLiveAgain": "Reopen live",
     "endLive": "End live",
+    "deleteTypeToConfirm": "To confirm, type the webinar title:",
+    "deleteError": "Could not delete the webinar. Please try again.",
+    "statusChangeError": "Could not change the webinar status. Please try again.",
     "attendees": "Attendees",
     "registrations": "Registrations"
   },
@@ -254,6 +258,7 @@
     "waitingToStart": "The webinar will start soon...",
     "liveNow": "LIVE",
     "ended": "This webinar has ended",
+    "videoUnavailable": "Stream unavailable. Check the video URL.",
     "replayAvailable": "Replay available",
     "replayExpired": "Replay has expired",
     "replayExpiresIn": "Replay expires in {{time}}",
@@ -261,6 +266,10 @@
     "offer": "Special offer",
     "offerExpires": "Offer expires in",
     "claimOffer": "Claim offer"
+  },
+  "integrations": {
+    "title": "Integrations",
+    "subtitle": "Hotmart, Selflux, and product mapping"
   },
   "admin": {
     "title": "Administration",
@@ -271,5 +280,33 @@
     "activeWebinars": "Active webinars",
     "overview": "Overview",
     "emptyTable": "No records found"
+  },
+  "users": {
+    "title": "Users",
+    "subtitle": "Manage your organization members",
+    "inviteUser": "Invite user",
+    "inviteTitle": "Invite User",
+    "name": "Name",
+    "email": "Email",
+    "role": "Role",
+    "status": "Status",
+    "invitedAt": "Invited at",
+    "actions": "Actions",
+    "roleAdmin": "Administrator",
+    "rolePresenter": "Operator",
+    "roleAttendee": "Attendant",
+    "statusPending": "Pending",
+    "statusActive": "Active",
+    "statusInvitePending": "Invite pending",
+    "revokeAccess": "Revoke",
+    "revokeConfirm": "Are you sure you want to revoke this user's access?",
+    "roleChangeConfirm": "Change {{name}} role to {{role}}?",
+    "roleUpdated": "Role updated successfully",
+    "roleUpdateError": "Error updating role",
+    "inviteSent": "Invite sent to {{email}}",
+    "inviteDescription": "The user will receive an email with a magic link to access the platform.",
+    "noMembers": "No members found.",
+    "sendInvite": "Send invite",
+    "sending": "Sending..."
   }
 }

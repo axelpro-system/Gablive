@@ -3,7 +3,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useOrg } from '../../contexts/OrgContext';
 import { fetchAuditLogs } from '../../lib/audit';
 import { supabase } from '../../lib/supabase';
-import { FileText, Filter, RefreshCw, Clock, User, FileEdit, Trash2, UserPlus } from 'lucide-react';
+import { FileText, Filter, RefreshCw, Clock, User, FileEdit, Trash2, UserPlus, Radio, Square } from 'lucide-react';
 import './DashboardPage.css';
 
 const ACTION_LABELS = {
@@ -11,6 +11,8 @@ const ACTION_LABELS = {
   update: 'Atualização',
   delete: 'Exclusão',
   invite: 'Convite',
+  go_live: 'Início ao vivo',
+  end_live: 'Encerramento',
 };
 
 const ACTION_ICONS = {
@@ -18,6 +20,8 @@ const ACTION_ICONS = {
   update: FileEdit,
   delete: Trash2,
   invite: UserPlus,
+  go_live: Radio,
+  end_live: Square,
 };
 
 const ENTITY_LABELS = {
@@ -47,7 +51,11 @@ export default function AuditLogPage() {
   const [filterAction, setFilterAction] = useState('');
 
   const loadLogs = useCallback(async () => {
-    if (!orgId) return;
+    if (!orgId) {
+      setLogs([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     const data = await fetchAuditLogs(orgId, {
       limit: 100,
@@ -103,6 +111,8 @@ export default function AuditLogPage() {
             <option value="update">Atualização</option>
             <option value="delete">Exclusão</option>
             <option value="invite">Convite</option>
+            <option value="go_live">Início ao vivo</option>
+            <option value="end_live">Encerramento</option>
           </select>
           {(filterEntity || filterAction) && (
             <button

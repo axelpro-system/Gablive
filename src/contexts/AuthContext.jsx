@@ -13,15 +13,47 @@ export function AuthProvider({ children }) {
   const fetchProfile = useCallback(async (userId) => {
     const { data, error } = await supabase
       .from('profiles')
-      .select('*, organizations(*)')
+      .select('*')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
 
-    if (!error && data) {
-      setProfile(data);
+    let profileData = data;
+
+    if (error || !profileData?.org_id) {
+      const { data: ensured, error: ensureError } = await supabase
+        .rpc('ensure_user_profile')
+        .maybeSingle();
+
+      if (!ensureError && ensured) {
+        profileData = {
+          id: ensured.id,
+          user_id: ensured.user_id,
+          org_id: ensured.org_id,
+          role: ensured.role,
+          display_name: ensured.display_name,
+          email: ensured.email,
+          locale: ensured.locale,
+          organizations: ensured.organization || null,
+        };
+      }
     }
-    return data;
-  }, []);
+
+    if (profileData?.org_id && !profileData.organizations) {
+      const { data: org } = await supabase
+        .from('organizations')
+        .select('*')
+        .eq('id', profileData.org_id)
+        .maybeSingle();
+
+      profileData = {
+        ...profileData,
+        organizations: org || null,
+      };
+    }
+
+    setProfile(profileData || null);
+    return profileData || null;
+  }, [supabase]);
 
   useEffect(() => {
     const getSession = async () => {

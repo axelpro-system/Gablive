@@ -1,0 +1,5 @@
+.particle-text {
+  display: block;
+  width: 100%;
+  touch-action: none;
+}

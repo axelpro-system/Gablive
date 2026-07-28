@@ -27,12 +27,12 @@ test.describe('Registration Flow', () => {
     })
     await mockRegistrationPage(page, webinar)
 
-    // Mock the registrations check to return an existing registration
-    await page.route('**/rest/v1/registrations**', async (route) => {
+    // Mock the RPC duplicate check to return an existing registration
+    await page.route('**/rest/v1/rpc/check_registration_email', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify([{ id: 'existing-id', email: 'joao@example.com' }]),
+        body: JSON.stringify(true),
       })
     })
 
@@ -63,8 +63,9 @@ test.describe('Registration Flow', () => {
 
     await page.waitForTimeout(500)
     const errorMsg = await regPage.getErrorMessage()
-    // Either error message visible OR success not visible (form prevented submission)
     const success = await regPage.isSuccessVisible()
-    expect(success || errorMsg !== null).toBeTruthy()
+    expect(success).toBeFalsy()
+    expect(errorMsg).toBeNull()
+    await expect(regPage.formSection).toBeVisible()
   })
 })
