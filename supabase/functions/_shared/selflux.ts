@@ -190,6 +190,43 @@ class SelfluxAdapter implements ProviderAdapter {
     }
   }
 
+  /**
+   * Validate Selflux credential fields.
+   */
+  validateCredentials(
+    credentials: Record<string, string>
+  ): { ok: boolean; missing: string[] } {
+    const missing: string[] = [];
+    const c = credentials || {};
+
+    if (!c.api_key?.trim()) missing.push("api_key");
+    if (!c.webhook_secret?.trim()) missing.push("webhook_secret");
+
+    return { ok: missing.length === 0, missing };
+  }
+
+  /**
+   * Extract webhook secret from Selflux request.
+   * Selflux can send via X-Webhook-Secret, X-Api-Key, Authorization Bearer, or in the body.
+   */
+  extractWebhookSecret(
+    headers: Record<string, string>,
+    body?: Record<string, unknown>
+  ): string | null {
+    const get = (name: string) => headers[name] || headers[name.toLowerCase()];
+    const auth = get("Authorization");
+
+    return (
+      get("X-Webhook-Secret") ||
+      get("X-Selflux-Secret") ||
+      get("X-Api-Key") ||
+      (auth ? auth.replace(/^Bearer\s+/i, "") : null) ||
+      (body?.webhook_secret as string) ||
+      (body?.api_key as string) ||
+      null
+    );
+  }
+
   private parseAmount(value: unknown): number {
     if (typeof value === "number") return Math.round(value * 100);
     const num = parseFloat(String(value));

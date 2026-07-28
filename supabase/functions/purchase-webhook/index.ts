@@ -1,13 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 import {
+  isSupportedProvider,
   extractWebhookSecret,
+  constantTimeEqual,
+  normalizePayload,
   isApprovedPurchaseEvent,
-  isSupportedSalesProvider,
-  normalizeProviderWebhook,
-  validateWebhookAgainstStored,
-  type SalesProvider,
-} from "../_shared/salesProviders.ts"
+} from "../_shared/provider-registry.ts"
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -30,6 +29,34 @@ function serviceClient() {
   )
 }
 
+/**
+ * Validate webhook secret against stored secrets for the provider.
+ */
+function validateWebhookAgainstStored(
+  provider: string,
+  provided: string | null,
+  storedSecrets: Record<string, string> = {},
+): { valid: boolean; reason: string } {
+  if (!provided) return { valid: false, reason: "missing_webhook_secret" }
+
+  if (provider === "hotmart") {
+    const expected = storedSecrets.hottok || storedSecrets.webhook_secret
+    if (!expected) return { valid: false, reason: "integration_not_configured" }
+    return constantTimeEqual(provided, expected)
+      ? { valid: true, reason: "ok" }
+      : { valid: false, reason: "invalid_webhook_secret" }
+  }
+
+  if (provider === "selflux") {
+    const candidates = [storedSecrets.webhook_secret, storedSecrets.api_key].filter(Boolean) as string[]
+    if (candidates.length === 0) return { valid: false, reason: "integration_not_configured" }
+    const ok = candidates.some((expected) => constantTimeEqual(provided, expected))
+    return ok ? { valid: true, reason: "ok" } : { valid: false, reason: "invalid_webhook_secret" }
+  }
+
+  return { valid: false, reason: "unsupported_provider" }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders })
@@ -43,7 +70,7 @@ serve(async (req) => {
   const provider = (url.searchParams.get("provider") || "").toLowerCase()
   const orgIdParam = url.searchParams.get("org_id") || url.searchParams.get("org")
 
-  if (!isSupportedSalesProvider(provider)) {
+  if (!isSupportedProvider(provider)) {
     return json({ error: "Unsupported provider. Use provider=hotmart|selflux" }, 400)
   }
 
@@ -83,18 +110,20 @@ serve(async (req) => {
     .maybeSingle()
 
   const storedSecrets = (secretRow?.secrets || {}) as Record<string, string>
-  const providedSecret = extractWebhookSecret(provider, req.headers, payload)
+
+  // Extract webhook secret from request headers/body
+  const headerRecord: Record<string, string> = {}
+  req.headers.forEach((value, key) => { headerRecord[key] = value })
+  const providedSecret = extractWebhookSecret(provider, headerRecord, payload)
   const validation = validateWebhookAgainstStored(provider, providedSecret, storedSecrets)
 
   if (!validation.valid) {
     return json({ error: "Unauthorized", reason: validation.reason }, 401)
   }
 
-  let normalized
-  try {
-    normalized = normalizeProviderWebhook(provider as SalesProvider, payload)
-  } catch (err) {
-    console.error("normalize error", err)
+  // Normalize using the provider adapter
+  const normalized = normalizePayload(provider, payload)
+  if (!normalized) {
     await supabase.from("provider_webhook_events").insert({
       org_id: orgIdParam,
       provider,
@@ -102,10 +131,18 @@ serve(async (req) => {
       event_type: "malformed",
       status: "failed",
       raw_payload: payload,
-      error_message: err instanceof Error ? err.message : "normalize_failed",
+      error_message: "normalize_failed",
     })
     return json({ error: "Malformed payload", status: "failed" }, 422)
   }
+
+  // Build a legacy provider_event_id for backward compatibility
+  const providerEventId = [
+    provider,
+    normalized.externalEventId || "no-transaction",
+    normalized.eventType || "event",
+    normalized.purchaseStatus || "unknown",
+  ].join(":")
 
   // Idempotency
   const { data: existing } = await supabase
@@ -113,7 +150,7 @@ serve(async (req) => {
     .select("id, status, webinar_id")
     .eq("org_id", orgIdParam)
     .eq("provider", provider)
-    .eq("provider_event_id", normalized.providerEventId)
+    .eq("provider_event_id", providerEventId)
     .maybeSingle()
 
   if (existing) {
@@ -130,13 +167,13 @@ serve(async (req) => {
   let mapStatus: "processed" | "unmapped" | "ignored" = "unmapped"
   const approved = isApprovedPurchaseEvent(normalized)
 
-  if (normalized.productId) {
+  if (normalized.externalProductId) {
     const { data: maps } = await supabase
       .from("provider_product_mappings")
       .select("id, webinar_id, provider_offer_id, enabled")
       .eq("org_id", orgIdParam)
       .eq("provider", provider)
-      .eq("provider_product_id", normalized.productId)
+      .eq("provider_product_id", normalized.externalProductId)
       .eq("enabled", true)
 
     if (maps && maps.length > 0) {
@@ -162,12 +199,12 @@ serve(async (req) => {
       org_id: orgIdParam,
       webinar_id: webinarId,
       provider,
-      provider_event_id: normalized.providerEventId,
-      transaction_id: normalized.transactionId || null,
+      provider_event_id: providerEventId,
+      transaction_id: normalized.externalEventId || null,
       event_type: normalized.eventType,
-      product_id: normalized.productId || null,
+      product_id: normalized.externalProductId || null,
       offer_id: null,
-      buyer_email: normalized.buyerEmail || null,
+      buyer_email: normalized.buyer?.email || null,
       amount,
       currency: normalized.currency || "BRL",
       status: mapStatus,
@@ -187,14 +224,14 @@ serve(async (req) => {
   }
 
   if (mapStatus === "processed" && webinarId && approved) {
-    if (normalized.transactionId) {
+    if (normalized.externalEventId) {
       await supabase.from("purchases").upsert(
         {
           org_id: orgIdParam,
           webinar_id: webinarId,
           provider,
-          provider_transaction_id: normalized.transactionId,
-          buyer_email: normalized.buyerEmail || null,
+          provider_transaction_id: normalized.externalEventId,
+          buyer_email: normalized.buyer?.email || null,
           amount,
           currency: normalized.currency || "BRL",
           status: "approved",
@@ -210,10 +247,10 @@ serve(async (req) => {
       event_type: "purchase",
       event_data: {
         provider,
-        provider_event_id: normalized.providerEventId,
-        transaction_id: normalized.transactionId,
-        product_id: normalized.productId,
-        buyer_email: normalized.buyerEmail,
+        provider_event_id: providerEventId,
+        transaction_id: normalized.externalEventId,
+        product_id: normalized.externalProductId,
+        buyer_email: normalized.buyer?.email,
         amount,
         currency: normalized.currency,
         source: "purchase-webhook",

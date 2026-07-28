@@ -7,6 +7,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 import { getProviderAdapter } from "../_shared/provider-registry.ts"
+import { decryptSecret } from "../_shared/crypto.ts"
 import type { NormalizedEvent } from "../_shared/integration-types.ts"
 
 function json(data: unknown, status = 200) {
@@ -18,37 +19,6 @@ function json(data: unknown, status = 200) {
 
 function error(message: string, status = 400) {
   return json({ success: false, error: message }, status)
-}
-
-/**
- * Decrypt secret that was encrypted with AES-GCM in save-integration-config.
- */
-async function decryptSecret(encrypted: string): Promise<string> {
-  const enc = new TextEncoder()
-  const dec = new TextDecoder()
-
-  const keyMaterial = Deno.env.get("INTEGRATION_ENCRYPTION_KEY") ??
-    Deno.env.get("SUPABASE_JWT_SECRET") ?? "fallback-dev-key-change-me"
-
-  const key = await crypto.subtle.importKey(
-    "raw",
-    enc.encode(keyMaterial.slice(0, 32).padEnd(32, "\0")),
-    { name: "AES-GCM" },
-    false,
-    ["decrypt"]
-  )
-
-  const [ivB64, ctB64] = encrypted.split(":")
-  const iv = Uint8Array.from(atob(ivB64), (c) => c.charCodeAt(0))
-  const ct = Uint8Array.from(atob(ctB64), (c) => c.charCodeAt(0))
-
-  const plainBuffer = await crypto.subtle.decrypt(
-    { name: "AES-GCM", iv },
-    key,
-    ct
-  )
-
-  return dec.decode(plainBuffer)
 }
 
 /**

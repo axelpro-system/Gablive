@@ -214,6 +214,46 @@ class HotmartAdapter implements ProviderAdapter {
     }
   }
 
+  /**
+   * Validate Hotmart credential fields.
+   */
+  validateCredentials(
+    credentials: Record<string, string>
+  ): { ok: boolean; missing: string[] } {
+    const missing: string[] = [];
+    const c = credentials || {};
+
+    if (!c.client_id?.trim()) missing.push("client_id");
+    if (!c.client_secret?.trim() && !c.basic_token?.trim()) {
+      missing.push("client_secret_or_basic_token");
+    }
+    if (!c.hottok?.trim() && !c.webhook_secret?.trim()) {
+      missing.push("hottok");
+    }
+
+    return { ok: missing.length === 0, missing };
+  }
+
+  /**
+   * Extract webhook secret from Hotmart request.
+   * Hotmart sends the hottok in the X-Hotmart-Hottok header or in the body.
+   */
+  extractWebhookSecret(
+    headers: Record<string, string>,
+    body?: Record<string, unknown>
+  ): string | null {
+    const get = (name: string) => headers[name] || headers[name.toLowerCase()];
+
+    return (
+      get("X-HOTMART-HOTTOK") ||
+      get("X-Hotmart-Hottok") ||
+      get("hottok") ||
+      (body?.hottok as string) ||
+      ((body?.data as Record<string, unknown>)?.hottok as string) ||
+      null
+    );
+  }
+
   private parseAmount(value: unknown): number {
     if (typeof value === "number") return Math.round(value * 100);
     const num = parseFloat(String(value));

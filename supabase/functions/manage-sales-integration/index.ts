@@ -1,10 +1,11 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 import {
-  isSupportedSalesProvider,
-  validateCredentialFields,
-  type SalesProvider,
-} from "../_shared/salesProviders.ts"
+  isSupportedProvider,
+  validateCredentials,
+} from "../_shared/provider-registry.ts"
+
+type SalesProvider = "hotmart" | "selflux"
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -123,7 +124,7 @@ async function saveIntegration(
   const existing = await getIntegration(supabase, orgId, provider)
   const previousSecrets = await getSecrets(supabase, existing?.id)
   const mergedSecrets = { ...previousSecrets, ...incoming }
-  const validation = validateCredentialFields(provider, mergedSecrets)
+  const validation = validateCredentials(provider, mergedSecrets)
   const now = new Date().toISOString()
 
   const integrationPayload = {
@@ -230,7 +231,7 @@ async function testIntegration(
   if (!integration) return { ok: false, message: "Credenciais não salvas" }
 
   const secrets = await getSecrets(supabase, integration.id)
-  const validation = validateCredentialFields(provider, secrets)
+  const validation = validateCredentials(provider, secrets)
   let ok = validation.ok
   let message = ok ? "Credenciais configuradas" : `Campos ausentes: ${validation.missing.join(", ")}`
 
@@ -355,7 +356,7 @@ async function listMappings(
     .eq("org_id", orgId)
     .order("created_at", { ascending: false })
 
-  if (provider && isSupportedSalesProvider(provider)) query = query.eq("provider", provider)
+  if (provider && isSupportedProvider(provider)) query = query.eq("provider", provider)
 
   const { data, error } = await query
   if (error) return { mappings: [], error: error.message }
@@ -368,7 +369,7 @@ async function createMapping(
   body: Record<string, unknown>,
 ) {
   const provider = String(body.provider || "")
-  if (!isSupportedSalesProvider(provider)) return { error: "Provider inválido" }
+  if (!isSupportedProvider(provider)) return { error: "Provider inválido" }
 
   const { data, error } = await supabase
     .from("provider_product_mappings")
@@ -435,7 +436,7 @@ serve(async (req) => {
     const body = await req.json() as Record<string, unknown>
     const action = String(body.action || "")
     const requestedProvider = String(body.provider || "")
-    const provider = isSupportedSalesProvider(requestedProvider)
+    const provider = isSupportedProvider(requestedProvider)
       ? requestedProvider
       : null
     const targetOrgId = String(body.org_id || orgUser.orgId)

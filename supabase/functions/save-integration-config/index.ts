@@ -6,6 +6,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
+import { encryptSecret, decryptSecret } from "../_shared/crypto.ts"
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -24,68 +25,6 @@ function json(data: unknown, status = 200) {
 
 function error(message: string, status = 400) {
   return json({ success: false, error: message }, status)
-}
-
-/**
- * Simple AES-GCM encryption for secrets at rest.
- * Uses a key derived from SUPABASE_JWT_SECRET or a dedicated env var.
- */
-async function encryptSecret(plaintext: string): Promise<string> {
-  const enc = new TextEncoder()
-  const keyMaterial = Deno.env.get("INTEGRATION_ENCRYPTION_KEY") ??
-    Deno.env.get("SUPABASE_JWT_SECRET") ?? "fallback-dev-key-change-me"
-
-  // Derive a 256-bit key from the material
-  const key = await crypto.subtle.importKey(
-    "raw",
-    enc.encode(keyMaterial.slice(0, 32).padEnd(32, "\0")),
-    { name: "AES-GCM" },
-    false,
-    ["encrypt"]
-  )
-
-  const iv = crypto.getRandomValues(new Uint8Array(12))
-  const ciphertext = await crypto.subtle.encrypt(
-    { name: "AES-GCM", iv },
-    key,
-    enc.encode(plaintext)
-  )
-
-  // Pack: base64(iv) + ":" + base64(ciphertext)
-  const ivB64 = btoa(String.fromCharCode(...iv))
-  const ctB64 = btoa(String.fromCharCode(...new Uint8Array(ciphertext)))
-  return `${ivB64}:${ctB64}`
-}
-
-/**
- * Decrypt a secret encrypted with encryptSecret.
- */
-async function decryptSecret(encrypted: string): Promise<string> {
-  const enc = new TextEncoder()
-  const dec = new TextDecoder()
-
-  const keyMaterial = Deno.env.get("INTEGRATION_ENCRYPTION_KEY") ??
-    Deno.env.get("SUPABASE_JWT_SECRET") ?? "fallback-dev-key-change-me"
-
-  const key = await crypto.subtle.importKey(
-    "raw",
-    enc.encode(keyMaterial.slice(0, 32).padEnd(32, "\0")),
-    { name: "AES-GCM" },
-    false,
-    ["decrypt"]
-  )
-
-  const [ivB64, ctB64] = encrypted.split(":")
-  const iv = Uint8Array.from(atob(ivB64), (c) => c.charCodeAt(0))
-  const ct = Uint8Array.from(atob(ctB64), (c) => c.charCodeAt(0))
-
-  const plainBuffer = await crypto.subtle.decrypt(
-    { name: "AES-GCM", iv },
-    key,
-    ct
-  )
-
-  return dec.decode(plainBuffer)
 }
 
 // ─── Provider adapter imports ────────────────────────────────────────────────

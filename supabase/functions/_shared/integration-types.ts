@@ -70,4 +70,21 @@ export interface ProviderAdapter {
     config: Record<string, string>,
     secret: string
   ): Promise<{ ok: boolean; error?: string }>;
+
+  /**
+   * Validate credential fields (for save-time validation).
+   * Returns which required fields are missing.
+   */
+  validateCredentials(
+    credentials: Record<string, string>
+  ): { ok: boolean; missing: string[] };
+
+  /**
+   * Extract webhook authentication secret from incoming request headers/body.
+   * Different providers send the secret in different locations.
+   */
+  extractWebhookSecret(
+    headers: Record<string, string>,
+    body?: Record<string, unknown>
+  ): string | null;
 }
