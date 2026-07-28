@@ -61,7 +61,7 @@ export function getLiveRoomState(webinar, now = new Date()) {
     type === WEBINAR_TYPE.RECORDED ||
     (type === WEBINAR_TYPE.LIVE &&
       status === WEBINAR_STATUS.SCHEDULED &&
-      isDue(webinar.scheduled_at, now));
+      (webinar.is_just_in_time || isDue(webinar.scheduled_at, now)));
 
   if (shouldPlay) {
     if (hasEmbed) {
