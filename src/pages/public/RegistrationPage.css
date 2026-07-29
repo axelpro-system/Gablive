@@ -17,7 +17,7 @@
 }
 
 .reg-header > span {
-  color: #a1a1aa;
+  color: #c4c4c7;
   font-size: 12px;
 }
 
@@ -89,7 +89,7 @@
 .reg-hero-subtitle {
   max-width: 640px;
   margin: 24px 0 0;
-  color: #a1a1aa;
+  color: #c4c4c7;
   font-size: clamp(16px, 1.6vw, 20px);
   line-height: 1.65;
 }
@@ -157,7 +157,7 @@
 }
 
 .reg-form .input::placeholder {
-  color: #71717a;
+  color: #a1a1aa;
 }
 
 .reg-form .input:focus {
@@ -209,7 +209,7 @@
   justify-content: center;
   gap: 7px;
   margin-top: 12px;
-  color: #71717a;
+  color: #a1a1aa;
   font-size: 11px;
 }
 
@@ -230,7 +230,7 @@
   justify-content: flex-start;
   gap: 8px;
   margin-bottom: 16px;
-  color: #a1a1aa;
+  color: #c4c4c7;
   font-size: 13px;
   font-weight: 600;
 }
@@ -264,7 +264,7 @@
 
 .reg-countdown-unit-label {
   margin-top: 6px;
-  color: #71717a;
+  color: #a1a1aa;
   font-size: 9px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -336,7 +336,7 @@
 
 .reg-benefit-item p {
   margin: 0;
-  color: #a1a1aa;
+  color: #c4c4c7;
   font-size: 14px;
   line-height: 1.55;
 }
@@ -382,7 +382,7 @@
 }
 
 .reg-testimonial-role {
-  color: #71717a;
+  color: #a1a1aa;
   font-size: 11px;
 }
 
@@ -400,7 +400,7 @@
   min-height: 88px;
   margin: 0 auto;
   border-top: 1px solid #27272a;
-  color: #71717a;
+  color: #a1a1aa;
   font-size: 11px;
 }
 
@@ -434,7 +434,7 @@
 
 .reg-success-card p {
   margin: 12px 0 28px;
-  color: #a1a1aa;
+  color: #c4c4c7;
 }
 
 @media (max-width: 860px) {
@@ -449,7 +449,7 @@
 
   .reg-form-section {
     position: static;
-    padding: 0 0 64px;
+    padding: 0 0 100px; /* extra space so keyboard doesn't hide form behind sticky CTA */
   }
 
   .reg-form-card {
@@ -490,14 +490,14 @@
 
 .exit-intent-close {
   position: absolute;
-  top: 16px;
-  right: 16px;
+  top: 8px;
+  right: 8px;
   background: transparent;
   border: none;
-  color: #a1a1aa;
+  color: #c4c4c7;
   cursor: pointer;
-  padding: 4px;
-  border-radius: 4px;
+  padding: 10px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -517,7 +517,7 @@
 
 .exit-intent-modal p {
   margin: 0 0 24px;
-  color: #a1a1aa;
+  color: #c4c4c7;
   font-size: 15px;
   line-height: 1.6;
 }
