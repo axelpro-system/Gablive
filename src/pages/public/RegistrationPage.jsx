@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../../lib/supabase';
@@ -7,7 +7,7 @@ import { useTrackEvent } from '../../hooks/useAnalytics';
 import { BLOCK_TYPES, ANALYTICS_EVENTS, WAIT_ROOM_JIT_DELAY_SECONDS } from '../../lib/constants';
 import { useSeo } from '../../hooks/useSeo';
 import { sanitizeInput, isValidEmail } from '../../lib/sanitize';
-import { CheckCircle, Clock, Quote, ArrowRight, ShieldCheck } from 'lucide-react';
+import { CheckCircle, Clock, Quote, ArrowRight, ShieldCheck, CalendarDays, X, Users } from 'lucide-react';
 import './RegistrationPage.css';
 
 export default function RegistrationPage() {
@@ -21,15 +21,30 @@ export default function RegistrationPage() {
   const [loginConfig, setLoginConfig] = useState(null);
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({ name: '', email: '', phone: '' });
+  const [emailValid, setEmailValid] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
+  const [showExitIntent, setShowExitIntent] = useState(false);
+  const [hasShownExitIntent, setHasShownExitIntent] = useState(false);
+  const nameInputRef = useRef(null);
 
   // SEO metadata optimization
   useSeo({
     title: webinar?.title ? `Inscrição: ${webinar.title}` : 'Webinário Gratuito',
     description: webinar?.description || 'Inscreva-se agora para assistir a este exclusivo webinário online.',
   });
+
+  useEffect(() => {
+    const handleMouseLeave = (e) => {
+      if (e.clientY < 0 && !hasShownExitIntent && !success) {
+        setShowExitIntent(true);
+        setHasShownExitIntent(true);
+      }
+    };
+    document.addEventListener('mouseleave', handleMouseLeave);
+    return () => document.removeEventListener('mouseleave', handleMouseLeave);
+  }, [hasShownExitIntent, success]);
 
   useEffect(() => {
     const fetch = async () => {
@@ -56,6 +71,29 @@ export default function RegistrationPage() {
   }, [slug]);
 
   const countdown = useCountdown(webinar?.scheduled_at);
+
+  const scrollToForm = (e) => {
+    e.preventDefault();
+    const formElement = document.getElementById('reg-form');
+    if (formElement) {
+      formElement.scrollIntoView({ behavior: 'smooth' });
+      setTimeout(() => {
+        if (nameInputRef.current) {
+          nameInputRef.current.focus();
+        }
+      }, 500);
+    }
+  };
+
+  const handleEmailChange = (e) => {
+    const val = e.target.value;
+    setFormData({ ...formData, email: val });
+    if (val.length > 3) {
+      setEmailValid(isValidEmail(val));
+    } else {
+      setEmailValid(null);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -157,6 +195,14 @@ export default function RegistrationPage() {
   }
 
   if (success) {
+    const generateGoogleCalendarUrl = () => {
+      const start = new Date(webinar.scheduled_at);
+      const end = new Date(start.getTime() + 2 * 60 * 60 * 1000); // 2 hours
+      const formatTime = (d) => d.toISOString().replace(/-|:|\.\d\d\d/g, '');
+      const details = encodeURIComponent(webinar.description || 'Webinário exclusivo.');
+      return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(webinar.title)}&dates=${formatTime(start)}/${formatTime(end)}&details=${details}`;
+    };
+
     return (
       <div className="reg-success-page">
         <div className="reg-success-card">
@@ -170,6 +216,13 @@ export default function RegistrationPage() {
             {t('room.title')}
             <ArrowRight size={18} />
           </button>
+          
+          <div className="reg-calendar-links" style={{ marginTop: '24px' }}>
+            <a href={generateGoogleCalendarUrl()} target="_blank" rel="noopener noreferrer" className="btn btn-secondary btn-sm">
+              <CalendarDays size={16} />
+              Adicionar ao Google Agenda
+            </a>
+          </div>
         </div>
       </div>
     );
@@ -196,10 +249,10 @@ export default function RegistrationPage() {
             <h1 className="reg-hero-title">{block.data?.title || webinar.title}</h1>
             <p className="reg-hero-subtitle">{block.data?.subtitle || webinar.description}</p>
             {block.data?.cta && (
-              <a href="#reg-form" className="btn btn-primary btn-xl reg-hero-cta">
+              <button onClick={scrollToForm} className="btn btn-primary btn-xl reg-hero-cta">
                 {block.data.cta}
                 <ArrowRight size={20} />
-              </a>
+              </button>
             )}
           </section>
         );
@@ -299,6 +352,7 @@ export default function RegistrationPage() {
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     required={loginConfig?.require_name ?? true}
+                    ref={nameInputRef}
                   />
                 </div>
                 <div className="input-group">
@@ -308,12 +362,13 @@ export default function RegistrationPage() {
                   <input
                     id="reg-email"
                     type="email"
-                    className="input"
+                    className={`input ${emailValid === true ? 'input-valid' : ''} ${emailValid === false ? 'input-error' : ''}`}
                     placeholder={loginConfig?.email_placeholder || t('auth.emailPlaceholder')}
                     value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    onChange={handleEmailChange}
                     required={loginConfig?.require_email ?? true}
                   />
+                  {emailValid === false && <span className="input-error-msg" style={{color: '#ef4444', fontSize: '12px', marginTop: '4px', display: 'block'}}>Formato de e-mail inválido</span>}
                 </div>
                 {((block.data?.fields || []).includes('phone') || loginConfig?.require_phone) && (
                   <div className="input-group">
@@ -346,6 +401,10 @@ export default function RegistrationPage() {
                   )}
                 </button>
               </form>
+              <div className="reg-form-social-proof">
+                <Users size={16} />
+                <span>Mais de <strong>2.500 pessoas</strong> já garantiram a vaga.</span>
+              </div>
               <p className="reg-form-trust">
                 <ShieldCheck size={15} />
                 Seus dados estão seguros. Não enviamos spam.
@@ -379,6 +438,29 @@ export default function RegistrationPage() {
       <main className="reg-content">
         {blocks.map(renderBlock)}
       </main>
+      
+      <button className="mobile-sticky-cta" onClick={scrollToForm}>
+        Garantir Minha Vaga
+      </button>
+
+      {showExitIntent && (
+        <div className="exit-intent-overlay" onClick={() => setShowExitIntent(false)}>
+          <div className="exit-intent-modal" onClick={e => e.stopPropagation()}>
+            <button className="exit-intent-close" onClick={() => setShowExitIntent(false)}>
+              <X size={20} />
+            </button>
+            <h3>🚨 Espera aí!</h3>
+            <p>Você vai mesmo perder a chance de aprender o conteúdo exclusivo deste webinário?</p>
+            <button className="btn btn-primary btn-lg" onClick={(e) => {
+              setShowExitIntent(false);
+              scrollToForm(e);
+            }} style={{ width: '100%', marginTop: '16px' }}>
+              Quero garantir minha vaga
+            </button>
+          </div>
+        </div>
+      )}
+
       <footer className="reg-footer">
         <img src="/logo-dark.svg" alt="GabLive" />
         <span>© {new Date().getFullYear()} GabLive. Todos os direitos reservados.</span>
