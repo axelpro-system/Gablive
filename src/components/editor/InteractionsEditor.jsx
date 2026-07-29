@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { MessageSquare, ExternalLink, BarChart3, Plus, Trash2, Save, ShoppingCart, Users2 } from 'lucide-react';
+import { MessageSquare, ExternalLink, BarChart3, Plus, Trash2, Save, ShoppingCart, Users2, Upload, Download } from 'lucide-react';
+import Papa from 'papaparse';
 import { AUDIENCE_MODE } from '../../lib/constants';
 import TimeInput from './TimeInput';
 import './InteractionsEditor.css';
@@ -217,6 +218,96 @@ export default function InteractionsEditor({ webinarId }) {
     setPolls(polls.filter(p => p.id !== id));
   };
 
+  const parseTimeToSeconds = (timeStr) => {
+    if (!timeStr) return 0;
+    if (!isNaN(timeStr)) return parseInt(timeStr, 10);
+    const parts = timeStr.toString().split(':');
+    if (parts.length === 2) {
+      return parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+    }
+    if (parts.length === 3) {
+      return parseInt(parts[0], 10) * 3600 + parseInt(parts[1], 10) * 60 + parseInt(parts[2], 10);
+    }
+    return 0;
+  };
+
+  const handleFileUpload = (e, type) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: async (results) => {
+        const data = results.data;
+        let inserts = [];
+        
+        if (type === 'chat') {
+          inserts = data.map(row => ({
+            webinar_id: webinarId,
+            author_name: row.Autor || row.author_name || row.autor || 'Usuário',
+            message: row.Mensagem || row.message || row.mensagem || '',
+            timestamp_seconds: parseTimeToSeconds(row.Tempo || row.tempo || row.timestamp_seconds || 0)
+          })).filter(i => i.message);
+          
+          if (inserts.length > 0) {
+            const { data: inserted } = await supabase.from('simulated_messages').insert(inserts).select();
+            if (inserted) setMessages(prev => [...prev, ...inserted].sort((a,b) => a.timestamp_seconds - b.timestamp_seconds));
+          }
+        } 
+        else if (type === 'cta') {
+          inserts = data.map(row => ({
+            webinar_id: webinarId,
+            show_at_seconds: parseTimeToSeconds(row.Tempo || row.tempo || row.show_at_seconds || 0),
+            title: row.Titulo || row.titulo || row.title || '',
+            button_text: row.Botao || row.botao || row.button_text || 'Comprar Agora',
+            button_url: row.URL || row.url || row.button_url || '',
+            original_price: row.PrecoOriginal ? parseFloat(row.PrecoOriginal) : null,
+            sale_price: row.PrecoOferta ? parseFloat(row.PrecoOferta) : null,
+            pitch_start_seconds: row.InicioPitch ? parseTimeToSeconds(row.InicioPitch) : null,
+            banner_desktop_url: row.BannerDesktop || null,
+            banner_mobile_url: row.BannerMobile || null
+          })).filter(i => i.title && i.button_url);
+
+          if (inserts.length > 0) {
+            const { data: inserted } = await supabase.from('cta_configs').insert(inserts).select();
+            if (inserted) setCtas(prev => [...prev, ...inserted].sort((a,b) => a.show_at_seconds - b.show_at_seconds));
+          }
+        }
+        else if (type === 'polls') {
+          inserts = data.map(row => ({
+            webinar_id: webinarId,
+            show_at_seconds: parseTimeToSeconds(row.Tempo || row.tempo || row.show_at_seconds || 0),
+            question: row.Pergunta || row.pergunta || row.question || '',
+            options: (row.Opcoes || row.opcoes || row.options || 'Sim,Não').split(',').map(o=>o.trim()).filter(Boolean),
+            active: true
+          })).filter(i => i.question);
+
+          if (inserts.length > 0) {
+            const { data: inserted } = await supabase.from('polls').insert(inserts).select();
+            if (inserted) setPolls(prev => [...prev, ...inserted].sort((a,b) => a.show_at_seconds - b.show_at_seconds));
+          }
+        }
+        else if (type === 'sales') {
+          inserts = data.map(row => ({
+            webinar_id: webinarId,
+            show_at_seconds: parseTimeToSeconds(row.Tempo || row.tempo || row.show_at_seconds || 0),
+            buyer_name: row.Comprador || row.comprador || row.buyer_name || '',
+            buyer_location: row.Cidade || row.cidade || row.buyer_location || '',
+            product_name: row.Produto || row.produto || row.product_name || ''
+          })).filter(i => i.buyer_name && i.product_name);
+
+          if (inserts.length > 0) {
+            const { data: inserted } = await supabase.from('sales_notifications').insert(inserts).select();
+            if (inserted) setSales(prev => [...prev, ...inserted].sort((a,b) => a.show_at_seconds - b.show_at_seconds));
+          }
+        }
+        
+        e.target.value = null;
+      }
+    });
+  };
+
   const formatSeconds = (totalSeconds) => {
     const t = Math.max(0, Math.floor(Number(totalSeconds) || 0));
     const h = Math.floor(t / 3600);
@@ -252,8 +343,17 @@ export default function InteractionsEditor({ webinarId }) {
       <div className="interactions-content">
         {activeSubTab === 'chat' && (
           <div className="interaction-section card">
-            <div className="card-header">
+            <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h4>Timeline do Chat Simulado</h4>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <a href="/templates/exemplo_chat.csv" download className="btn btn-sm btn-ghost" title="Baixar Planilha de Exemplo">
+                  <Download size={14} /> Exemplo
+                </a>
+                <label className="btn btn-sm btn-outline" style={{ cursor: 'pointer', margin: 0 }}>
+                  <Upload size={14} style={{ marginRight: 4 }} /> Importar CSV
+                  <input type="file" accept=".csv" hidden onChange={(e) => handleFileUpload(e, 'chat')} />
+                </label>
+              </div>
             </div>
             <div className="card-body">
               {/* Predefined templates */}
@@ -303,8 +403,17 @@ export default function InteractionsEditor({ webinarId }) {
 
         {activeSubTab === 'cta' && (
           <div className="interaction-section card">
-            <div className="card-header">
+            <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h4>Ofertas e Banners (CTAs)</h4>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <a href="/templates/exemplo_ofertas.csv" download className="btn btn-sm btn-ghost" title="Baixar Planilha de Exemplo">
+                  <Download size={14} /> Exemplo
+                </a>
+                <label className="btn btn-sm btn-outline" style={{ cursor: 'pointer', margin: 0 }}>
+                  <Upload size={14} style={{ marginRight: 4 }} /> Importar CSV
+                  <input type="file" accept=".csv" hidden onChange={(e) => handleFileUpload(e, 'cta')} />
+                </label>
+              </div>
             </div>
             <div className="card-body">
               <form onSubmit={addCta} className="add-form flex-col">
@@ -359,8 +468,17 @@ export default function InteractionsEditor({ webinarId }) {
 
         {activeSubTab === 'polls' && (
           <div className="interaction-section card">
-            <div className="card-header">
+            <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h4>Enquetes</h4>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <a href="/templates/exemplo_enquetes.csv" download className="btn btn-sm btn-ghost" title="Baixar Planilha de Exemplo">
+                  <Download size={14} /> Exemplo
+                </a>
+                <label className="btn btn-sm btn-outline" style={{ cursor: 'pointer', margin: 0 }}>
+                  <Upload size={14} style={{ marginRight: 4 }} /> Importar CSV
+                  <input type="file" accept=".csv" hidden onChange={(e) => handleFileUpload(e, 'polls')} />
+                </label>
+              </div>
             </div>
             <div className="card-body">
               <form onSubmit={addPoll} className="add-form flex-col">
@@ -397,8 +515,17 @@ export default function InteractionsEditor({ webinarId }) {
 
         {activeSubTab === 'sales' && (
           <div className="interaction-section card">
-            <div className="card-header">
+            <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h4>Prova Social — Notificações de Venda</h4>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <a href="/templates/exemplo_vendas.csv" download className="btn btn-sm btn-ghost" title="Baixar Planilha de Exemplo">
+                  <Download size={14} /> Exemplo
+                </a>
+                <label className="btn btn-sm btn-outline" style={{ cursor: 'pointer', margin: 0 }}>
+                  <Upload size={14} style={{ marginRight: 4 }} /> Importar CSV
+                  <input type="file" accept=".csv" hidden onChange={(e) => handleFileUpload(e, 'sales')} />
+                </label>
+              </div>
             </div>
             <div className="card-body">
               <form onSubmit={addSale} className="add-form flex-col">
