@@ -448,6 +448,35 @@
   .reg-form-section {
     padding: 0 0 100px;
   }
+
+  /* Sticky CTA visible on all screens below lg breakpoint */
+  .mobile-sticky-cta {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    bottom: 24px;
+    left: 24px;
+    right: 24px;
+    height: 54px;
+    background: var(--reg-primary, #e31c23);
+    color: #fff;
+    font-size: 16px;
+    font-weight: 600;
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+    z-index: 990;
+    cursor: pointer;
+  }
+
+  .mobile-sticky-cta:active {
+    transform: scale(0.98);
+  }
+
+  .reg-footer {
+    padding-bottom: 90px; /* Space for sticky button */
+  }
 }
 
 .mobile-sticky-cta {
@@ -576,31 +605,6 @@
     justify-content: center;
     gap: 10px;
     text-align: center;
-    padding-bottom: 90px; /* Space for sticky button */
-  }
-
-  .mobile-sticky-cta {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: fixed;
-    bottom: 24px;
-    left: 24px;
-    right: 24px;
-    height: 54px;
-    background: var(--reg-primary, #e31c23);
-    color: #fff;
-    font-size: 16px;
-    font-weight: 600;
-    border: none;
-    border-radius: 12px;
-    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
-    z-index: 990;
-    cursor: pointer;
-  }
-  
-  .mobile-sticky-cta:active {
-    transform: scale(0.98);
   }
 }
 
