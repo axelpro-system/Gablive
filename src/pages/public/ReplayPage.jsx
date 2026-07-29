@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../../lib/supabase';
 import { useCountdownSeconds } from '../../hooks/useCountdown';
+import { buildVideoEmbedUrl } from '../../lib/liveRoomState';
 import { Clock, AlertTriangle, PlayCircle } from 'lucide-react';
 import { differenceInSeconds, addHours, isPast } from 'date-fns';
 import './ReplayPage.css';
@@ -52,12 +53,7 @@ export default function ReplayPage() {
 
   const getVideoEmbed = () => {
     if (!webinar?.video_url) return null;
-    const url = webinar.video_url;
-    const ytMatch = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
-    if (ytMatch) return `https://www.youtube.com/embed/${ytMatch[1]}?rel=0&controls=0&modestbranding=1&showinfo=0&fs=0&iv_load_policy=3&disablekb=1`;
-    const vimeoMatch = url.match(/vimeo\.com\/(\d+)/);
-    if (vimeoMatch) return `https://player.vimeo.com/video/${vimeoMatch[1]}`;
-    return url;
+    return buildVideoEmbedUrl(webinar.video_url, globalThis?.location?.origin || '');
   };
 
   if (loading) {
