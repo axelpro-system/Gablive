@@ -4,6 +4,7 @@ import App from './App';
 import { SupabaseProvider } from './contexts/SupabaseContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { OrgProvider } from './contexts/OrgContext';
+import 'bootstrap/dist/css/bootstrap-grid.min.css';
 import './lib/i18n';
 import './styles/index.css';
 

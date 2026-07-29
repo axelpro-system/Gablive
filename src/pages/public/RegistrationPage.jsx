@@ -425,6 +425,11 @@ export default function RegistrationPage() {
     }
   };
 
+  // Split blocks for Bootstrap grid layout
+  const sidebarTypes = [BLOCK_TYPES.HERO, BLOCK_TYPES.COUNTDOWN, BLOCK_TYPES.FORM];
+  const sidebarBlocks = blocks.filter(b => sidebarTypes.includes(b.type));
+  const restBlocks = blocks.filter(b => !sidebarTypes.includes(b.type));
+
   return (
     <div className="reg-page" style={customStyle}>
       <header className="reg-header">
@@ -435,8 +440,29 @@ export default function RegistrationPage() {
         />
         <span>Evento online e gratuito</span>
       </header>
-      <main className="reg-content">
-        {blocks.map(renderBlock)}
+      <main>
+        <div className="container">
+          {/* Two-column row: hero + countdown (left) | form (right) */}
+          <div className="row">
+            <div className="col-12 col-lg-7 reg-col-left">
+              {sidebarBlocks
+                .filter(b => b.type !== BLOCK_TYPES.FORM)
+                .map((block, i) => renderBlock(block, `side-left-${i}`))}
+            </div>
+            <div className="col-12 col-lg-5 reg-col-right">
+              {sidebarBlocks
+                .filter(b => b.type === BLOCK_TYPES.FORM)
+                .map((block, i) => renderBlock(block, `side-right-${i}`))}
+            </div>
+          </div>
+
+          {/* Full-width rows: benefits, testimonials, text, etc. */}
+          {restBlocks.map((block, i) => (
+            <div className="row" key={`rest-${i}`}>
+              <div className="col-12">{renderBlock(block, `rest-${i}`)}</div>
+            </div>
+          ))}
+        </div>
       </main>
       
       <button className="mobile-sticky-cta" onClick={scrollToForm}>

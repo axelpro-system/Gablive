@@ -40,28 +40,40 @@
   color: #f4f4f5;
 }
 
-.reg-content {
-  display: grid;
-  grid-template-columns: minmax(0, 1.25fr) minmax(340px, 0.75fr);
-  grid-template-areas:
-    'hero form'
-    'countdown form'
-    'rest rest';
-  column-gap: clamp(40px, 6vw, 88px);
-  width: min(1180px, calc(100% - 48px));
-  margin: 0 auto;
+/* Bootstrap container override to match original 1180px layout */
+.reg-page .container {
+  max-width: 1180px;
+  padding-left: 0;
+  padding-right: 0;
 }
 
 .reg-block {
   width: 100%;
-  max-width: none;
   margin: 0;
   padding: 72px 0;
 }
 
+/* Left sidebar column — hero + countdown vertical stack */
+.reg-col-left {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Right sidebar column — sticky form card */
+.reg-col-right {
+  align-self: flex-start;
+  position: sticky;
+  top: 32px;
+}
+
+/* Remove sticky on mobile (Bootstrap col-12 overrides col-lg-5) */
+@media (max-width: 991.98px) {
+  .reg-col-right {
+    position: static;
+  }
+}
+
 .reg-hero {
-  grid-area: hero;
-  align-self: end;
   padding: clamp(72px, 10vw, 128px) 0 32px;
   text-align: left;
 }
@@ -112,10 +124,6 @@
 }
 
 .reg-form-section {
-  grid-area: form;
-  position: sticky;
-  top: 32px;
-  align-self: start;
   padding: clamp(72px, 10vw, 128px) 0 48px;
 }
 
@@ -218,7 +226,6 @@
 }
 
 .reg-countdown-section {
-  grid-area: countdown;
   padding: 20px 0 72px;
   background: transparent;
   text-align: left;
@@ -274,12 +281,6 @@
   padding-bottom: 18px;
   color: #52525b;
   font-size: 24px;
-}
-
-.reg-benefits,
-.reg-testimonials,
-.reg-text {
-  grid-column: 1 / -1;
 }
 
 .reg-benefits,
@@ -437,24 +438,15 @@
   color: #c4c4c7;
 }
 
-@media (max-width: 860px) {
-  .reg-content {
-    grid-template-columns: 1fr;
-    grid-template-areas:
-      'hero'
-      'countdown'
-      'form'
-      'rest';
+@media (max-width: 991.98px) {
+  /* On tablet/mobile the form card expands full-width inside its column */
+  .reg-form-card {
+    max-width: 100%;
+    margin: 0;
   }
 
   .reg-form-section {
-    position: static;
-    padding: 0 0 100px; /* extra space so keyboard doesn't hide form behind sticky CTA */
-  }
-
-  .reg-form-card {
-    max-width: 620px;
-    margin: 0;
+    padding: 0 0 100px;
   }
 }
 
@@ -534,9 +526,13 @@
 
 @media (max-width: 600px) {
   .reg-header,
-  .reg-content,
   .reg-footer {
-    width: min(100% - 32px, 1180px);
+    width: calc(100% - 32px);
+  }
+
+  .reg-page .container {
+    padding-left: 16px;
+    padding-right: 16px;
   }
 
   .reg-header > span {
