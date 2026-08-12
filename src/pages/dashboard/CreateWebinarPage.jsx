@@ -34,11 +34,25 @@ export default function CreateWebinarPage() {
     e.preventDefault();
     setError('');
 
+    let scheduledAtIso = null;
+    if (form.scheduled_at) {
+      const parsedDate = new Date(form.scheduled_at);
+      if (Number.isNaN(parsedDate.getTime())) {
+        setError('Data e hora do webinário inválidas.');
+        return;
+      }
+      if (!form.is_just_in_time && parsedDate.getTime() < Date.now()) {
+        setError('A data do webinário não pode estar no passado.');
+        return;
+      }
+      scheduledAtIso = parsedDate.toISOString();
+    }
+
     try {
       const webinar = await createWebinar({
         ...form,
-        scheduled_at: form.scheduled_at ? new Date(form.scheduled_at).toISOString() : null,
-        status: form.is_just_in_time || form.scheduled_at ? 'scheduled' : 'draft',
+        scheduled_at: scheduledAtIso,
+        status: form.is_just_in_time || scheduledAtIso ? 'scheduled' : 'draft',
       });
       navigate(`/webinars/${webinar.id}`);
     } catch (err) {

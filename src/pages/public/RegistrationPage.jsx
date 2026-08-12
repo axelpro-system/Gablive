@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import DOMPurify from 'dompurify';
 import { supabase } from '../../lib/supabase';
 import { useCountdown } from '../../hooks/useCountdown';
 import { useTrackEvent } from '../../hooks/useAnalytics';
@@ -133,17 +134,16 @@ export default function RegistrationPage() {
         ? new Date(Date.now() + jitDelayMs).toISOString()
         : null;
 
-      const { data: reg, error: regError } = await supabase
-        .from('registrations')
-        .insert({
-          webinar_id: webinar.id,
-          name: cleanName,
-          email: cleanEmail,
-          phone: formData.phone ? sanitizeInput(formData.phone) : null,
-          session_start_at: sessionStartAt,
-        })
-        .select()
-        .single();
+      // RPC (SECURITY DEFINER) instead of a raw insert().select(): anon can INSERT
+      // into registrations, but cannot SELECT it back (org-scoped RLS policy), so
+      // .select() on a plain insert fails as an RLS violation on the whole write.
+      const { data: reg, error: regError } = await supabase.rpc('register_participant', {
+        p_webinar_id: webinar.id,
+        p_name: cleanName,
+        p_email: cleanEmail,
+        p_phone: formData.phone ? sanitizeInput(formData.phone) : null,
+        p_session_start_at: sessionStartAt,
+      });
 
       if (regError) throw regError;
 
@@ -416,7 +416,7 @@ export default function RegistrationPage() {
       case BLOCK_TYPES.TEXT:
         return (
           <section key={index} className="reg-block reg-text">
-            <div dangerouslySetInnerHTML={{ __html: block.data?.content || '' }} />
+            <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(block.data?.content || '') }} />
           </section>
         );
 

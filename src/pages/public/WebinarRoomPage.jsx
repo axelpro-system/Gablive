@@ -16,6 +16,7 @@ import { useSimulatedAudience } from '../../hooks/useSimulatedAudience';
 import { useRegistration } from '../../hooks/useRegistration';
 import { WEBINAR_STATUS, ANALYTICS_EVENTS } from '../../lib/constants';
 import { buildVideoEmbedUrl, getLiveRoomState, LIVE_ROOM_STATE } from '../../lib/liveRoomState';
+import CinemaScreenVideo from '../../components/video/CinemaScreenVideo';
 import { sanitizeInput } from '../../lib/sanitize';
 import {
   Send, Users, Radio, Clock, ExternalLink, X,
@@ -100,12 +101,28 @@ export default function WebinarRoomPage() {
 
   const handleSendChat = async (e) => {
     e.preventDefault();
-    if (!chatInput.trim()) return;
-    const result = await sendMessage(sanitizeInput(chatInput));
+    const input = chatInput.trim();
+    if (!input) return;
+    const sanitized = sanitizeInput(input);
+    const result = await sendMessage(sanitized);
     if (!result?.ok) return;
     setChatInput('');
     if (webinar && registration) {
       trackEvent(webinar.id, registration.id, ANALYTICS_EVENTS.CHAT_MESSAGE);
+    }
+
+    // AI Agent integration — the agent now watches every message and decides
+    // for itself (server-side) whether a reply is warranted, so no keyword gate here.
+    if (webinar?.ai_agent_enabled) {
+      supabase.functions
+        .invoke('gemini-chat', {
+          body: {
+            webinar_id: webinar.id,
+            user_message: sanitized,
+            user_name: registration?.name || 'Participante',
+          },
+        })
+        .catch((err) => console.error('Failed to invoke AI agent', err));
     }
   };
 
@@ -183,6 +200,36 @@ export default function WebinarRoomPage() {
       roomState.reason === 'status_live' ||
       roomState.reason === 'playable');
 
+  // Tela de Cinema: silhueta curva habilitada no dashboard (settings.presentation)
+  const presentation = webinar.settings?.presentation || {};
+  const cinemaEnabled = !!(showPlayer && embedUrl && presentation?.enabled);
+  const durationSec = (webinar.session_duration_minutes || 60) * 60;
+  const cinemaProgress =
+    cinemaEnabled && durationSec > 0
+      ? Math.max(0, Math.min(1, videoTime / durationSec))
+      : null;
+
+  const videoOverlays = (
+    <>
+      <div className="room-video-overlay-blocker" />
+      {isMuted && (
+        <button className="room-unmute-overlay" onClick={handleUnmute} aria-label="Ativar som">
+          <Volume2 size={24} className="unmute-icon" />
+          <span>Sua transmissão começou! Clique para ativar o som 🔊</span>
+        </button>
+      )}
+
+      <div className="room-sales-toasts">
+        {visibleSaleToasts.map((sale) => (
+          <div key={sale.id} className="room-sale-toast">
+            <strong>{sale.buyer_name}{sale.buyer_location ? ` (${sale.buyer_location})` : ''}</strong>
+            <span> acabou de comprar {sale.product_name}</span>
+          </div>
+        ))}
+      </div>
+    </>
+  );
+
   return (
     <div className="room-page">
       <header className="room-header">
@@ -221,30 +268,35 @@ export default function WebinarRoomPage() {
               </div>
             ) : (
               <div className="room-video-wrapper">
-                <iframe
-                  ref={iframeRef}
-                  className="room-video-iframe"
-                  src={embedUrl}
-                  title={webinar.title}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                />
-                <div className="room-video-overlay-blocker" />
-                {isMuted && (
-                  <button className="room-unmute-overlay" onClick={handleUnmute} aria-label="Ativar som">
-                    <Volume2 size={24} className="unmute-icon" />
-                    <span>Sua transmissão começou! Clique para ativar o som 🔊</span>
-                  </button>
+                {cinemaEnabled ? (
+                  <CinemaScreenVideo
+                    src={embedUrl}
+                    title={webinar.title}
+                    progress={cinemaProgress}
+                    mediaRef={iframeRef}
+                    shape={presentation.shape}
+                    curveV={presentation.curveV}
+                    curveH={presentation.curveH}
+                    corner={presentation.corner}
+                    shadow={presentation.shadow}
+                    vignette={presentation.vignette}
+                    vignetteColor={presentation.vignetteColor}
+                  >
+                    {videoOverlays}
+                  </CinemaScreenVideo>
+                ) : (
+                  <>
+                    <iframe
+                      ref={iframeRef}
+                      className="room-video-iframe"
+                      src={embedUrl}
+                      title={webinar.title}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                    {videoOverlays}
+                  </>
                 )}
-
-                <div className="room-sales-toasts">
-                  {visibleSaleToasts.map((sale) => (
-                    <div key={sale.id} className="room-sale-toast">
-                      <strong>{sale.buyer_name}{sale.buyer_location ? ` (${sale.buyer_location})` : ''}</strong>
-                      <span> acabou de comprar {sale.product_name}</span>
-                    </div>
-                  ))}
-                </div>
               </div>
             )}
           </section>
@@ -393,8 +445,8 @@ export default function WebinarRoomPage() {
                 </div>
               ) : (
                 allMessages.map((msg) => (
-                  <div key={msg.id} className={`room-chat-message ${msg.isSimulated ? 'simulated' : ''}`}>
-                    <div className="room-chat-avatar">{msg.user_name?.[0]?.toUpperCase() || '?'}</div>
+                  <div key={msg.id} className={`room-chat-message ${msg.isSimulated ? 'simulated' : ''} ${msg.is_ai ? 'ai-message' : ''}`}>
+                    <div className="room-chat-avatar">{msg.is_ai ? '🤖' : msg.user_name?.[0]?.toUpperCase() || '?'}</div>
                     <div className="room-chat-bubble">
                       <span className="room-chat-name">{msg.user_name}</span>
                       <span className="room-chat-text">{msg.message}</span>
