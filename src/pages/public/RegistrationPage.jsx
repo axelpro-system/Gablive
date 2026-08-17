@@ -5,8 +5,9 @@ import DOMPurify from 'dompurify';
 import { supabase } from '../../lib/supabase';
 import { useCountdown } from '../../hooks/useCountdown';
 import { useTrackEvent } from '../../hooks/useAnalytics';
-import { BLOCK_TYPES, ANALYTICS_EVENTS, WAIT_ROOM_JIT_DELAY_SECONDS } from '../../lib/constants';
+import { BLOCK_TYPES, ANALYTICS_EVENTS } from '../../lib/constants';
 import { useSeo } from '../../hooks/useSeo';
+import { useRegistrationSubmit } from '../../hooks/useRegistrationSubmit';
 import { sanitizeInput, isValidEmail } from '../../lib/sanitize';
 import { CheckCircle, Clock, Quote, ArrowRight, ShieldCheck, CalendarDays, X, Users } from 'lucide-react';
 import './RegistrationPage.css';
@@ -23,9 +24,7 @@ export default function RegistrationPage() {
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({ name: '', email: '', phone: '' });
   const [emailValid, setEmailValid] = useState(null);
-  const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
-  const [error, setError] = useState('');
   const [showExitIntent, setShowExitIntent] = useState(false);
   const [hasShownExitIntent, setHasShownExitIntent] = useState(false);
   const nameInputRef = useRef(null);
@@ -71,6 +70,7 @@ export default function RegistrationPage() {
     fetch();
   }, [slug]);
 
+  const { submitRegistration, submitting, error, setError } = useRegistrationSubmit(webinar);
   const countdown = useCountdown(webinar?.scheduled_at);
 
   const scrollToForm = (e) => {
@@ -98,84 +98,41 @@ export default function RegistrationPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setSubmitting(true);
-    setError('');
 
     const cleanEmail = formData.email.trim().toLowerCase();
     const cleanName = sanitizeInput(formData.name);
 
     if (!isValidEmail(cleanEmail)) {
       setError('Por favor, informe um endereço de e-mail válido.');
-      setSubmitting(false);
       return;
     }
 
-    try {
-      // Check if already registered (RPC — registrations no longer world-readable)
-      const { data: alreadyRegistered, error: checkError } = await supabase.rpc(
-        'check_registration_email',
-        { p_webinar_id: webinar.id, p_email: cleanEmail }
-      );
+    const result = await submitRegistration(
+      cleanName,
+      cleanEmail,
+      formData.phone ? sanitizeInput(formData.phone) : null,
+    );
 
-      if (checkError) {
-        console.error('check_registration_email failed', checkError);
-      }
-
-      if (alreadyRegistered) {
+    if (!result.success || !result.reg?.id) {
+      if (result.error === 'alreadyRegistered') {
         setError(t('registration.alreadyRegistered'));
-        setSubmitting(false);
-        return;
       }
-
-      // Just-in-Time: cada lead tem seu próprio "relógio" a partir da entrada
-      // (com aquecimento na sala de espera, se configurado)
-      const jitDelayMs = webinar.use_wait_room ? WAIT_ROOM_JIT_DELAY_SECONDS * 1000 : 0;
-      const sessionStartAt = webinar.is_just_in_time
-        ? new Date(Date.now() + jitDelayMs).toISOString()
-        : null;
-
-      // RPC (SECURITY DEFINER) instead of a raw insert().select(): anon can INSERT
-      // into registrations, but cannot SELECT it back (org-scoped RLS policy), so
-      // .select() on a plain insert fails as an RLS violation on the whole write.
-      const { data: reg, error: regError } = await supabase.rpc('register_participant', {
-        p_webinar_id: webinar.id,
-        p_name: cleanName,
-        p_email: cleanEmail,
-        p_phone: formData.phone ? sanitizeInput(formData.phone) : null,
-        p_session_start_at: sessionStartAt,
-      });
-
-      if (regError) throw regError;
-
-      trackEvent(webinar.id, reg.id, ANALYTICS_EVENTS.REGISTRATION);
-
-      // Enqueue confirmation email (durable queue → process-email-queue worker).
-      // Capture the SPA origin so CTAs link here, not a marketing domain.
-      supabase
-        .rpc('enqueue_confirmation_email', {
-          p_registration_id: reg.id,
-          p_app_base_url: window.location.origin,
-        })
-        .then(({ error: enqueueError }) => {
-          if (enqueueError) {
-            console.error('enqueue_confirmation_email failed', enqueueError);
-          }
-        });
-
-      // Store registration ID for room access
-      localStorage.setItem(`webinar-reg-${webinar.id}`, reg.id);
-
-      if (webinar.use_wait_room) {
-        navigate(`/wait/${webinar.slug}`);
-        return;
-      }
-
-      setSuccess(true);
-    } catch (err) {
-      setError(err.message || 'Error registering');
-    } finally {
-      setSubmitting(false);
+      return;
     }
+
+    trackEvent(webinar.id, result.reg.id, ANALYTICS_EVENTS.REGISTRATION);
+    localStorage.setItem(`webinar-reg-${webinar.id}`, result.reg.id);
+
+    const accessPath = webinar.use_wait_room
+      ? `/wait/${webinar.slug}?reg=${result.reg.id}`
+      : `/room/${webinar.slug}?reg=${result.reg.id}`;
+
+    if (webinar.use_wait_room) {
+      navigate(accessPath);
+      return;
+    }
+
+    setSuccess(true);
   };
 
   if (loading) {
@@ -211,25 +168,33 @@ export default function RegistrationPage() {
           <p>{t('registration.successMessage')}</p>
           <button
             className="btn btn-primary btn-lg"
-            onClick={() => navigate(`/room/${webinar.slug}`)}
+            onClick={() => {
+              const regId = localStorage.getItem(`webinar-reg-${webinar.id}`);
+              navigate(regId ? `/room/${webinar.slug}?reg=${regId}` : `/room/${webinar.slug}`);
+            }}
           >
             {t('room.title')}
             <ArrowRight size={18} />
           </button>
-          
-          <div className="reg-calendar-links" style={{ marginTop: '24px' }}>
-            <a href={generateGoogleCalendarUrl()} target="_blank" rel="noopener noreferrer" className="btn btn-secondary btn-sm">
-              <CalendarDays size={16} />
-              Adicionar ao Google Agenda
-            </a>
-          </div>
+
+          {webinar.scheduled_at && (
+            <div className="reg-calendar-links" style={{ marginTop: '24px' }}>
+              <a href={generateGoogleCalendarUrl()} target="_blank" rel="noopener noreferrer" className="btn btn-secondary btn-sm">
+                <CalendarDays size={16} />
+                Adicionar ao Google Agenda
+              </a>
+            </div>
+          )}
         </div>
       </div>
     );
   }
 
   const theme = page?.theme || {};
-  const blocks = page?.blocks || [];
+  const storedBlocks = page?.blocks || [];
+  const blocks = storedBlocks.some((block) => block.type === BLOCK_TYPES.FORM)
+    ? storedBlocks
+    : [...storedBlocks, { type: BLOCK_TYPES.FORM, data: { fields: ['name', 'email'] } }];
   const usesLegacyTheme = (
     (!theme.primaryColor || theme.primaryColor.toLowerCase() === '#3366ff')
     && (!theme.backgroundColor || theme.backgroundColor.toLowerCase() === '#ffffff')
@@ -395,7 +360,7 @@ export default function RegistrationPage() {
                     <span className="spinner spinner-sm" />
                   ) : (
                     <>
-                      {block.data?.buttonText || loginConfig?.button_text || t('registration.registerButton')}
+                      {block.data?.buttonText || t('registration.registerButton')}
                       <ArrowRight size={20} />
                     </>
                   )}

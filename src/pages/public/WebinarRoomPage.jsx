@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useSupabase } from '../../contexts/SupabaseContext';
@@ -47,6 +47,20 @@ export default function WebinarRoomPage() {
   const { visibleSaleToasts } = useSalesToasts(webinar, videoTime);
   useWatchMilestones(webinar, registration, videoTime, trackEvent);
   useVideoProgressTracking(webinar, registration, videoTime, trackEvent);
+
+  useEffect(() => {
+    if (!webinar?.id || !registration?.id) return undefined;
+
+    const leave = () => {
+      trackEvent(webinar.id, registration.id, ANALYTICS_EVENTS.LEAVE);
+    };
+
+    window.addEventListener('pagehide', leave);
+    return () => {
+      leave();
+      window.removeEventListener('pagehide', leave);
+    };
+  }, [webinar?.id, registration?.id, trackEvent]);
 
   const [isMuted, setIsMuted] = useState(true);
   const [activeMobileTab, setActiveMobileTab] = useState('chat');

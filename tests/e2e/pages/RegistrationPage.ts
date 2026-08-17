@@ -45,9 +45,19 @@ export class RegistrationPage {
     await this.page.waitForLoadState('networkidle')
   }
 
-  async isSuccessVisible() {
+  async isSuccessVisible(timeout = 3000) {
     const successHeading = this.page.getByRole('heading', { name: /registro confirmado|inscri/i })
-    return successHeading.isVisible().catch(() => this.successMessage.isVisible().catch(() => false))
+    try {
+      await successHeading.waitFor({ state: 'visible', timeout })
+      return true
+    } catch {
+      try {
+        await this.successMessage.waitFor({ state: 'visible', timeout })
+        return true
+      } catch {
+        return false
+      }
+    }
   }
 
   async getErrorMessage() {

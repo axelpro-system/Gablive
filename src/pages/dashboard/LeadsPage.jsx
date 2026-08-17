@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
-import { Users, Search, Download, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Users, UserCheck, UserX, TrendingUp, Clock, Search, Download, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
+import { computeLeadKpis, formatWatchDuration, reduceWatchSeconds } from '../../lib/leadKpis';
 import './DashboardPage.css';
 
 /** Page size for table UI (spec F0-T3). */
@@ -39,6 +40,27 @@ function buildLeadsQuery(webIds, searchTerm) {
   return query;
 }
 
+function buildLeadsCountQuery(webIds, searchTerm, { attended } = {}) {
+  let query = supabase
+    .from('registrations')
+    .select('id', { count: 'exact', head: true })
+    .in('webinar_id', webIds);
+
+  const q = sanitizeSearchTerm(searchTerm);
+  if (q) {
+    const pattern = `%${q}%`;
+    query = query.or(
+      `name.ilike.${pattern},email.ilike.${pattern},phone.ilike.${pattern}`
+    );
+  }
+
+  if (attended === true) {
+    query = query.eq('attended', true);
+  }
+
+  return query;
+}
+
 function downloadCsv(filename, header, rows) {
   const lines = [
     header.join(','),
@@ -67,6 +89,8 @@ export default function LeadsPage() {
   const [leads, setLeads] = useState([]);
   const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
+  const [attendedCount, setAttendedCount] = useState(0);
+  const [avgWatchSeconds, setAvgWatchSeconds] = useState(0);
   const [error, setError] = useState(null);
   const webinarMapRef = useRef({});
 
@@ -91,6 +115,8 @@ export default function LeadsPage() {
       setWebinarsReady(true);
       setLeads([]);
       setTotalCount(0);
+      setAttendedCount(0);
+      setAvgWatchSeconds(0);
       setLoading(false);
       return undefined;
     }
@@ -140,6 +166,8 @@ export default function LeadsPage() {
     if (!profile?.org_id) {
       setLeads([]);
       setTotalCount(0);
+      setAttendedCount(0);
+      setAvgWatchSeconds(0);
       setLoading(false);
       return undefined;
     }
@@ -149,6 +177,8 @@ export default function LeadsPage() {
     if (webIds.length === 0) {
       setLeads([]);
       setTotalCount(0);
+      setAttendedCount(0);
+      setAvgWatchSeconds(0);
       setLoading(false);
       return;
     }
@@ -162,30 +192,74 @@ export default function LeadsPage() {
       const from = (page - 1) * PAGE_SIZE;
       const to = from + PAGE_SIZE - 1;
 
-      const { data, count, error: fetchError } = await buildLeadsQuery(
-        webIds,
-        debouncedSearch
-      ).range(from, to);
+      const [pageResult, attendedResult] = await Promise.all([
+        buildLeadsQuery(webIds, debouncedSearch).range(from, to),
+        buildLeadsCountQuery(webIds, debouncedSearch, { attended: true }),
+      ]);
 
       if (cancelled) return;
 
-      if (fetchError) {
-        console.error('Failed to load leads page', fetchError);
-        setError(fetchError);
+      if (pageResult.error) {
+        console.error('Failed to load leads page', pageResult.error);
+        setError(pageResult.error);
         setLeads([]);
         setTotalCount(0);
+        setAttendedCount(0);
+        setAvgWatchSeconds(0);
         setLoading(false);
         return;
       }
 
       const map = webinarMapRef.current;
-      const enriched = (data || []).map((r) => ({
+      const rows = pageResult.data || [];
+      const ids = rows.map((r) => r.id);
+
+      const [watchResult, avgResult] = await Promise.all([
+        ids.length
+          ? supabase.rpc('get_registration_watch_seconds', { p_registration_ids: ids })
+          : Promise.resolve({ data: [], error: null }),
+        supabase.rpc('get_webinars_avg_watch_seconds', { p_webinar_ids: webIds }),
+      ]);
+
+      if (cancelled) return;
+
+      let watchById = Object.fromEntries(
+        (Array.isArray(watchResult.data) ? watchResult.data : []).map((row) => [
+          row.registration_id,
+          Number(row.watch_seconds) || 0,
+        ])
+      );
+
+      if (watchResult.error && ids.length) {
+        const { data: events } = await supabase
+          .from('analytics_events')
+          .select('registration_id, event_type, event_data, created_at')
+          .in('registration_id', ids);
+        watchById = reduceWatchSeconds(events);
+      }
+
+      const enriched = rows.map((r) => ({
         ...r,
         webinar_title: map[r.webinar_id] || 'Desconhecido',
+        watch_seconds: watchById[r.id] || 0,
       }));
 
+      let nextAvg = avgResult.error ? 0 : Number(avgResult.data) || 0;
+      if (avgResult.error) {
+        const { data: events } = await supabase
+          .from('analytics_events')
+          .select('registration_id, event_type, event_data, created_at')
+          .in('webinar_id', webIds);
+        const values = Object.values(reduceWatchSeconds(events));
+        nextAvg = values.length
+          ? Math.round(values.reduce((sum, value) => sum + value, 0) / values.length)
+          : 0;
+      }
+
       setLeads(enriched);
-      setTotalCount(count ?? 0);
+      setTotalCount(pageResult.count ?? 0);
+      setAttendedCount(attendedResult.error ? 0 : (attendedResult.count ?? 0));
+      setAvgWatchSeconds(nextAvg);
       setLoading(false);
     };
 
@@ -230,6 +304,17 @@ export default function LeadsPage() {
         if (exportError) throw exportError;
 
         const batch = data || [];
+        const { data: watchRows } = batch.length
+          ? await supabase.rpc('get_registration_watch_seconds', {
+            p_registration_ids: batch.map((r) => r.id),
+          })
+          : { data: [] };
+        const watchById = Object.fromEntries(
+          (Array.isArray(watchRows) ? watchRows : []).map((row) => [
+            row.registration_id,
+            Number(row.watch_seconds) || 0,
+          ])
+        );
         for (const r of batch) {
           allRows.push([
             r.name,
@@ -238,6 +323,7 @@ export default function LeadsPage() {
             map[r.webinar_id] || 'Desconhecido',
             new Date(r.registered_at).toLocaleString('pt-BR'),
             r.attended ? 'Sim' : 'Não',
+            formatWatchDuration(watchById[r.id] || 0),
           ]);
         }
 
@@ -247,7 +333,7 @@ export default function LeadsPage() {
 
       downloadCsv(
         `leads-${new Date().toISOString().split('T')[0]}.csv`,
-        ['Nome', 'Email', 'Telefone', 'Webinário', 'Data de Inscrição', 'Compareceu'],
+        ['Nome', 'Email', 'Telefone', 'Webinário', 'Data de Inscrição', 'Compareceu', 'Tempo na sala'],
         allRows
       );
     } catch (err) {
@@ -260,6 +346,48 @@ export default function LeadsPage() {
 
   const fromItem = totalCount === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
   const toItem = Math.min(page * PAGE_SIZE, totalCount);
+  const kpis = computeLeadKpis({
+    total: totalCount,
+    attended: attendedCount,
+    avgWatchSeconds,
+  });
+  const kpiCards = [
+    {
+      key: 'total',
+      label: 'Inscritos',
+      value: kpis.total,
+      icon: Users,
+      color: 'var(--color-primary-500)',
+    },
+    {
+      key: 'attended',
+      label: 'Compareceram',
+      value: kpis.attended,
+      icon: UserCheck,
+      color: 'var(--color-success-500)',
+    },
+    {
+      key: 'noShow',
+      label: 'Ausentes',
+      value: kpis.noShow,
+      icon: UserX,
+      color: 'var(--color-warning-500)',
+    },
+    {
+      key: 'rate',
+      label: 'Taxa de presença',
+      value: `${kpis.attendanceRate}%`,
+      icon: TrendingUp,
+      color: 'var(--color-error-500)',
+    },
+    {
+      key: 'watch',
+      label: 'Tempo médio na sala',
+      value: formatWatchDuration(kpis.avgWatchSeconds),
+      icon: Clock,
+      color: 'var(--color-primary-700)',
+    },
+  ];
 
   return (
     <div className="dashboard-page">
@@ -341,22 +469,18 @@ export default function LeadsPage() {
         </div>
       ) : (
         <>
-          <div className="stats-grid mb-8" style={{ maxWidth: 320 }}>
-            <div className="stat-card">
-              <div
-                className="stat-icon"
-                style={{
-                  background: 'rgba(51, 102, 255, 0.1)',
-                  color: 'var(--color-primary-600)',
-                }}
-              >
-                <Users size={24} />
+          <div className="stats-grid leads-kpi-grid mb-8">
+            {kpiCards.map((stat) => (
+              <div key={stat.key} className="stat-card">
+                <div className="stat-card-icon" style={{ color: stat.color }}>
+                  <stat.icon size={22} aria-hidden="true" />
+                </div>
+                <div>
+                  <p className="stat-card-label">{stat.label}</p>
+                  <p className="stat-card-value">{stat.value}</p>
+                </div>
               </div>
-              <div className="stat-content">
-                <span className="stat-label">Total de Leads</span>
-                <span className="stat-value">{totalCount}</span>
-              </div>
-            </div>
+            ))}
           </div>
 
           <div className={`card ${loading ? 'leads-table-loading' : ''}`}>
@@ -370,12 +494,13 @@ export default function LeadsPage() {
                     <th>Webinário</th>
                     <th>Data de Inscrição</th>
                     <th>Compareceu</th>
+                    <th>Tempo na sala</th>
                   </tr>
                 </thead>
                 <tbody>
                   {leads.length === 0 ? (
                     <tr>
-                      <td colSpan="6" className="text-center py-6 text-gray-500">
+                      <td colSpan="7" className="text-center py-6 text-gray-500">
                         Nenhum lead encontrado.
                       </td>
                     </tr>
@@ -403,6 +528,9 @@ export default function LeadsPage() {
                           ) : (
                             <span className="badge badge-secondary">Não</span>
                           )}
+                        </td>
+                        <td className="leads-watch-cell">
+                          {formatWatchDuration(lead.watch_seconds)}
                         </td>
                       </tr>
                     ))

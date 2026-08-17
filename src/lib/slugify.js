@@ -35,3 +35,22 @@ export function slugBaseFromTitle(title, videoUrl = '') {
 
   return slugify(raw) || 'webinar';
 }
+
+export function looksLikeVideoUrl(value) {
+  const raw = (value || '').toString().trim();
+  return /^https?:\/\//i.test(raw) || /youtube\.com|youtu\.be|vimeo\.com/i.test(raw);
+}
+
+export function detectVideoPlatform(url) {
+  return /vimeo\.com/i.test((url || '').toString()) ? 'vimeo' : 'youtube';
+}
+
+export function normalizeVideoUrl(value) {
+  const raw = (value || '').toString().trim();
+  if (!raw) return '';
+  if (/^https?:\/\//i.test(raw)) return raw;
+  if (/^(www\.)?(youtube\.com|youtu\.be|vimeo\.com)/i.test(raw)) {
+    return `https://${raw}`;
+  }
+  return raw;
+}

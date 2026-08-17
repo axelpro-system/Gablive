@@ -205,6 +205,27 @@ export async function mockRegistrationPage(page: Page, webinar: WebinarData) {
     })
   })
 
+  await page.route(`**/rest/v1/rpc/register_participant`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'new-reg-id',
+        webinar_id: webinar.id,
+        name: 'João Silva',
+        email: 'joao@example.com',
+      }),
+    })
+  })
+
+  await page.route(`**/rest/v1/rpc/recover_registration`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([]),
+    })
+  })
+
   await page.route(`**/rest/v1/rpc/enqueue_confirmation_email`, async (route) => {
     await route.fulfill({
       status: 200,

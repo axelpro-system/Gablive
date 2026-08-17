@@ -251,7 +251,7 @@
     "seconds": "seconds",
     "successTitle": "Registration confirmed!",
     "successMessage": "You'll receive an email with access details.",
-    "alreadyRegistered": "You're already registered for this webinar"
+    "alreadyRegistered": "You're already registered. We sent the access link to your email."
   },
   "room": {
     "title": "Webinar room",

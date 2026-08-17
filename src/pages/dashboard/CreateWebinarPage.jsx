@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useCreateWebinar } from '../../hooks/useWebinar';
 import { WEBINAR_TYPE, VIDEO_PLATFORM, DEFAULT_REPLAY_HOURS, RECURRENCE_TYPE } from '../../lib/constants';
+import { detectVideoPlatform, normalizeVideoUrl } from '../../lib/slugify';
 import { ArrowLeft, ArrowRight, Video, Radio, Youtube, Infinity as InfinityIcon, CalendarClock } from 'lucide-react';
 import './CreateWebinarPage.css';
 
@@ -34,6 +35,14 @@ export default function CreateWebinarPage() {
     e.preventDefault();
     setError('');
 
+    const title = form.title.trim();
+    if (!title) {
+      setError('Informe um título para o webinário.');
+      return;
+    }
+
+    const videoUrl = normalizeVideoUrl(form.video_url);
+
     let scheduledAtIso = null;
     if (form.scheduled_at) {
       const parsedDate = new Date(form.scheduled_at);
@@ -51,17 +60,26 @@ export default function CreateWebinarPage() {
     try {
       const webinar = await createWebinar({
         ...form,
+        title,
+        video_url: videoUrl,
+        video_platform: detectVideoPlatform(videoUrl),
         scheduled_at: scheduledAtIso,
         status: form.is_just_in_time || scheduledAtIso ? 'scheduled' : 'draft',
       });
-      navigate(`/webinars/${webinar.id}`);
+      navigate(`/webinars/${webinar.id}?tab=registration`);
     } catch (err) {
       setError(err.message || 'Error creating webinar');
     }
   };
 
   const updateField = (field, value) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
+    setForm((prev) => {
+      const next = { ...prev, [field]: value };
+      if (field === 'video_url') {
+        next.video_platform = detectVideoPlatform(value);
+      }
+      return next;
+    });
   };
 
   return (
@@ -147,7 +165,8 @@ export default function CreateWebinarPage() {
               <Youtube size={18} className="input-icon" />
               <input
                 id="cw-video"
-                type="url"
+                type="text"
+                inputMode="url"
                 className="input input-icon-left"
                 placeholder={t('webinar.videoUrlPlaceholder')}
                 value={form.video_url}

@@ -30,6 +30,14 @@
   margin-bottom: var(--space-8);
 }
 
+.leads-kpi-grid {
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+}
+
+.dashboard-page > .page-header {
+  flex-wrap: wrap;
+}
+
 .stat-card {
   display: flex;
   align-items: flex-start;
@@ -169,6 +177,11 @@
 .leads-toolbar {
   flex-wrap: wrap;
   justify-content: flex-end;
+}
+
+.leads-watch-cell {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 /* Responsive */

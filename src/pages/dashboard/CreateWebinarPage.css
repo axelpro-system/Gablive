@@ -18,6 +18,11 @@
 .create-webinar-header h1 {
   font-size: var(--text-2xl);
   margin-bottom: var(--space-1);
+  text-wrap: balance;
+}
+
+.create-webinar-header .page-subtitle {
+  text-wrap: pretty;
 }
 
 .create-webinar-form {
@@ -45,12 +50,15 @@
   flex-direction: column;
   align-items: center;
   gap: var(--space-2);
+  min-height: 44px;
   padding: var(--space-5);
   background: var(--color-bg-subtle);
   border: 2px solid var(--color-border);
   border-radius: var(--radius-lg);
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition-property: transform, background-color, border-color, color, box-shadow;
+  transition-duration: 150ms;
+  transition-timing-function: ease-out;
   text-align: center;
   color: var(--color-text-secondary);
 }
@@ -60,10 +68,15 @@
   background: var(--color-primary-50);
 }
 
+.type-option:active {
+  transform: scale(0.98);
+}
+
 .type-option.selected {
   border-color: var(--color-primary-500);
   background: var(--color-primary-50);
   color: var(--color-primary-700);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary-500) 16%, transparent);
 }
 
 .type-option-label {
@@ -75,38 +88,45 @@
 .type-option-desc {
   font-size: var(--text-xs);
   color: var(--color-text-tertiary);
+  text-wrap: pretty;
 }
 
 /* Toggle */
 .toggle-label {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--space-3);
+  min-height: 44px;
   cursor: pointer;
 }
 
 .toggle {
-  width: 36px;
-  height: 20px;
+  width: 40px;
+  height: 24px;
+  flex: 0 0 auto;
   appearance: none;
   background: var(--color-gray-200);
   border-radius: var(--radius-full);
   position: relative;
   cursor: pointer;
-  transition: background var(--transition-fast);
+  transition-property: background-color;
+  transition-duration: 150ms;
+  transition-timing-function: ease-out;
 }
 
 .toggle::after {
   content: '';
   position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 16px;
-  height: 16px;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
   background: white;
   border-radius: 50%;
   box-shadow: var(--shadow-xs);
-  transition: transform var(--transition-fast);
+  transition-property: transform;
+  transition-duration: 150ms;
+  transition-timing-function: ease-out;
 }
 
 .toggle:checked {

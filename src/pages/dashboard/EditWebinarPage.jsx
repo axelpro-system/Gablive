@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useSupabase } from '../../contexts/SupabaseContext';
 import { useOrg } from '../../contexts/OrgContext';
@@ -30,10 +30,16 @@ export default function EditWebinarPage() {
   const { orgId } = useOrg();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const [webinar, setWebinar] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('config');
+  const requestedTab = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState(
+    ['config', 'registration', 'login', 'interactions', 'emails', 'analytics'].includes(requestedTab)
+      ? requestedTab
+      : 'config'
+  );
   const [showDelete, setShowDelete] = useState(false);
 
   useEffect(() => {

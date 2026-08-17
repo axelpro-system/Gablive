@@ -4,15 +4,18 @@ import { useOrg } from '../contexts/OrgContext';
 import { useAuth } from '../contexts/AuthContext';
 import { logAudit } from '../lib/audit';
 import { defaultEmailConfigsForWebinar } from '../lib/emailTemplates';
-import { slugBaseFromTitle } from '../lib/slugify';
+import { detectVideoPlatform, looksLikeVideoUrl, normalizeVideoUrl, slugBaseFromTitle } from '../lib/slugify';
+
+function isSlugConflict(error) {
+  return error?.code === '23505' && /slug/i.test(error.message || error.details || '');
+}
 
 async function generateUniqueSlug(orgId, title, videoUrl = '') {
   const base = slugBaseFromTitle(title, videoUrl);
   let candidate = base;
   let attempt = 0;
 
-  // eslint-disable-next-line no-constant-condition
-  while (true) {
+  while (attempt < 20) {
     const { data } = await supabase
       .from('webinars')
       .select('id')
@@ -20,10 +23,36 @@ async function generateUniqueSlug(orgId, title, videoUrl = '') {
       .eq('slug', candidate)
       .maybeSingle();
 
-    if (!data) return candidate;
+    if (!data) return { base, slug: candidate };
     attempt += 1;
     candidate = `${base}-${attempt + 1}`;
   }
+
+  return { base, slug: `${base}-${Date.now().toString(36)}` };
+}
+
+async function insertWebinarWithUniqueSlug(payload, base) {
+  const tried = new Set();
+  let candidate = payload.slug;
+  let suffix = 2;
+
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    tried.add(candidate);
+    const { data, error } = await supabase
+      .from('webinars')
+      .insert({ ...payload, slug: candidate })
+      .select()
+      .single();
+
+    if (!error) return data;
+    if (!isSlugConflict(error)) throw error;
+
+    while (tried.has(`${base}-${suffix}`)) suffix += 1;
+    candidate = `${base}-${suffix}`;
+    suffix += 1;
+  }
+
+  throw new Error('Não foi possível gerar um endereço único para o webinário.');
 }
 
 export function useWebinars() {
@@ -163,32 +192,28 @@ export function useCreateWebinar() {
     if (!orgId) throw new Error('No organization');
     setLoading(true);
     try {
-      const slug = await generateUniqueSlug(
+      const { base, slug } = await generateUniqueSlug(
         orgId,
         webinarData.title,
         webinarData.video_url
       );
 
-      // If the operator pasted a video URL as the title, keep a clean display title
-      const looksLikeUrl =
-        /^https?:\/\//i.test(webinarData.title || '') ||
-        /youtube\.com|youtu\.be|vimeo\.com/i.test(webinarData.title || '');
+      const titleLooksLikeUrl = looksLikeVideoUrl(webinarData.title);
+      const videoUrl = normalizeVideoUrl(
+        webinarData.video_url || (titleLooksLikeUrl ? webinarData.title : '')
+      );
       const payload = {
         ...webinarData,
         org_id: orgId,
         slug,
-        title: looksLikeUrl
+        video_url: videoUrl || null,
+        video_platform: detectVideoPlatform(videoUrl),
+        title: titleLooksLikeUrl
           ? `Webinário ${slug.replace(/^video-/, '').slice(0, 12)}`
           : webinarData.title,
       };
 
-      const { data, error } = await supabase
-        .from('webinars')
-        .insert(payload)
-        .select()
-        .single();
-
-      if (error) throw error;
+      const data = await insertWebinarWithUniqueSlug(payload, base);
 
       // Audit log
       logAudit({
@@ -204,17 +229,17 @@ export function useCreateWebinar() {
       await supabase.from('audience_configs').insert({ webinar_id: data.id });
       await supabase.from('login_customizations').insert({ webinar_id: data.id });
 
-      // Create default registration page
-      await supabase.from('registration_pages').insert({
+      const { error: pageError } = await supabase.from('registration_pages').insert({
         webinar_id: data.id,
-        blocks: JSON.stringify([
-          { type: 'hero', data: { title: webinarData.title, subtitle: webinarData.description || '', cta: 'Garantir minha vaga' } },
+        blocks: [
+          { type: 'hero', data: { title: payload.title, subtitle: webinarData.description || '', cta: 'Garantir minha vaga' } },
           { type: 'countdown', data: {} },
           { type: 'form', data: { fields: ['name', 'email'] } },
-        ]),
-        theme: JSON.stringify({ primaryColor: '#3366ff', backgroundColor: '#ffffff', textColor: '#101828' }),
-        published: false,
+        ],
+        theme: { primaryColor: '#E31C23', backgroundColor: '#0F0F10', textColor: '#F4F4F5' },
+        published: true,
       });
+      if (pageError) throw pageError;
 
       // Create default email configs (branded Resend HTML templates)
       await supabase
