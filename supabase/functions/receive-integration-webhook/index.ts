@@ -221,7 +221,7 @@ serve(async (req) => {
           }
         } catch (decryptErr) {
           console.error(`Failed to decrypt/validate credential ${cred.id}:`, decryptErr)
-          // Continue anyway — might be a test webhook without encryption
+          continue
         }
       }
 
