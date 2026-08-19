@@ -4,6 +4,7 @@ import {
   isSupportedProvider,
   validateCredentials,
 } from "../_shared/provider-registry.ts"
+import { decryptSecretsObject, encryptSecretsObject } from "../_shared/crypto.ts"
 
 type SalesProvider = "hotmart" | "selflux"
 
@@ -94,7 +95,8 @@ async function getSecrets(
     .maybeSingle()
 
   if (error) throw new Error(error.message)
-  return compactCredentials(data?.secrets)
+  const decrypted = await decryptSecretsObject(data?.secrets as Record<string, unknown>)
+  return compactCredentials(decrypted)
 }
 
 function publicIdentifier(provider: SalesProvider, secrets: Credentials) {
@@ -164,7 +166,7 @@ async function saveIntegration(
         integration_id: integration.id,
         org_id: orgId,
         provider,
-        secrets: mergedSecrets,
+        secrets: await encryptSecretsObject(mergedSecrets),
         updated_at: now,
       }, { onConflict: "integration_id" })
 
