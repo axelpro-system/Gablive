@@ -238,6 +238,41 @@
   color: #22c55e;
 }
 
+.reg-recover-toggle {
+  display: block;
+  margin: 14px auto 0;
+  background: none;
+  border: none;
+  color: #a1a1aa;
+  font-size: 12px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.reg-recover-toggle:hover {
+  color: #fff;
+}
+
+.reg-recover-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.reg-recover-form .input {
+  flex: 1 1 220px;
+}
+
+.reg-recover-success {
+  margin-top: 14px;
+  text-align: center;
+  color: #22c55e;
+  font-size: 13px;
+}
+
 .reg-countdown-section {
   padding: 20px 0 72px;
   background: transparent;

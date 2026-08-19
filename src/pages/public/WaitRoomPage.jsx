@@ -18,37 +18,48 @@ export default function WaitRoomPage() {
   const [webinar, setWebinar] = useState(null);
   const [registration, setRegistration] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
 
   useSeo({
     title: webinar?.title ? `Sala de espera: ${webinar.title}` : 'Sala de espera',
   });
 
-  useEffect(() => {
-    const fetch = async () => {
-      const { data } = await supabase.rpc('get_public_webinar_by_slug', {
-        p_slug: slug,
-      });
+  const loadWebinar = async () => {
+    setLoading(true);
+    setLoadError(false);
 
-      if (data) {
-        setWebinar(data);
-        // Token de acesso: ?reg=<id> na URL (link de e-mail, cross-device),
-        // com fallback pro localStorage (mesmo aparelho). Persiste o da URL.
-        if (regParam) localStorage.setItem(`webinar-reg-${data.id}`, regParam);
-        const regId = regParam || localStorage.getItem(`webinar-reg-${data.id}`);
-        if (regId) {
-          const { data: regRows } = await supabase.rpc('get_registration_by_id', {
-            p_id: regId,
-          });
-          const reg = Array.isArray(regRows) ? regRows[0] : regRows;
-          if (reg) setRegistration(reg);
-        } else {
-          navigate(`/register/${slug}`, { replace: true });
-          return;
-        }
-      }
+    const { data, error: fetchError } = await supabase.rpc('get_public_webinar_by_slug', {
+      p_slug: slug,
+    });
+
+    if (fetchError) {
+      setLoadError(true);
       setLoading(false);
-    };
-    fetch();
+      return;
+    }
+
+    if (data) {
+      setWebinar(data);
+      // Token de acesso: ?reg=<id> na URL (link de e-mail, cross-device),
+      // com fallback pro localStorage (mesmo aparelho). Persiste o da URL.
+      if (regParam) localStorage.setItem(`webinar-reg-${data.id}`, regParam);
+      const regId = regParam || localStorage.getItem(`webinar-reg-${data.id}`);
+      if (regId) {
+        const { data: regRows } = await supabase.rpc('get_registration_by_id', {
+          p_id: regId,
+        });
+        const reg = Array.isArray(regRows) ? regRows[0] : regRows;
+        if (reg) setRegistration(reg);
+      } else {
+        navigate(`/register/${slug}`, { replace: true });
+        return;
+      }
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    loadWebinar();
   }, [slug, navigate, regParam]);
 
   const target = waitRoomTarget(webinar, registration);
@@ -67,10 +78,23 @@ export default function WaitRoomPage() {
     );
   }
 
+  if (loadError) {
+    return (
+      <div className="wait-error">
+        <h2>{t('registration.loadErrorTitle')}</h2>
+        <p>{t('registration.loadErrorMessage')}</p>
+        <button type="button" className="btn btn-primary" onClick={loadWebinar}>
+          {t('registration.retry')}
+        </button>
+      </div>
+    );
+  }
+
   if (!webinar) {
     return (
       <div className="wait-error">
-        <h2>Webinar not found</h2>
+        <h2>{t('registration.notFoundTitle')}</h2>
+        <p>{t('registration.notFoundMessage')}</p>
       </div>
     );
   }

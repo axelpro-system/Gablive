@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { supabase } from '../../lib/supabase';
 import { useCountdownSeconds } from '../../hooks/useCountdown';
 import { buildVideoEmbedUrl } from '../../lib/liveRoomState';
+import CinemaScreenVideo from '../../components/video/CinemaScreenVideo';
 import { Clock, AlertTriangle, PlayCircle } from 'lucide-react';
 import { differenceInSeconds, addHours, isPast } from 'date-fns';
 import './ReplayPage.css';
@@ -14,32 +15,43 @@ export default function ReplayPage() {
 
   const [webinar, setWebinar] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [expired, setExpired] = useState(false);
   const [remainingSeconds, setRemainingSeconds] = useState(0);
 
-  useEffect(() => {
-    const fetch = async () => {
-      const { data } = await supabase.rpc('get_public_webinar_by_slug', {
-        p_slug: slug,
-      });
+  const loadWebinar = async () => {
+    setLoading(true);
+    setLoadError(false);
 
-      if (data) {
-        setWebinar(data);
+    const { data, error: fetchError } = await supabase.rpc('get_public_webinar_by_slug', {
+      p_slug: slug,
+    });
 
-        if (!data.replay_enabled) {
+    if (fetchError) {
+      setLoadError(true);
+      setLoading(false);
+      return;
+    }
+
+    if (data) {
+      setWebinar(data);
+
+      if (!data.replay_enabled) {
+        setExpired(true);
+      } else if (data.replay_expires_hours && data.scheduled_at) {
+        const expiresAt = addHours(new Date(data.scheduled_at), data.replay_expires_hours);
+        if (isPast(expiresAt)) {
           setExpired(true);
-        } else if (data.replay_expires_hours && data.scheduled_at) {
-          const expiresAt = addHours(new Date(data.scheduled_at), data.replay_expires_hours);
-          if (isPast(expiresAt)) {
-            setExpired(true);
-          } else {
-            setRemainingSeconds(differenceInSeconds(expiresAt, new Date()));
-          }
+        } else {
+          setRemainingSeconds(differenceInSeconds(expiresAt, new Date()));
         }
       }
-      setLoading(false);
-    };
-    fetch();
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    loadWebinar();
   }, [slug]);
 
   const countdown = useCountdownSeconds(remainingSeconds);
@@ -51,11 +63,6 @@ export default function ReplayPage() {
     }
   }, [countdown.isExpired, remainingSeconds]);
 
-  const getVideoEmbed = () => {
-    if (!webinar?.video_url) return null;
-    return buildVideoEmbedUrl(webinar.video_url, globalThis?.location?.origin || '');
-  };
-
   if (loading) {
     return (
       <div className="replay-loading">
@@ -64,13 +71,35 @@ export default function ReplayPage() {
     );
   }
 
-  if (!webinar) {
+  if (loadError) {
     return (
       <div className="replay-error">
-        <h2>Webinar not found</h2>
+        <h2>{t('registration.loadErrorTitle')}</h2>
+        <p>{t('registration.loadErrorMessage')}</p>
+        <button type="button" className="btn btn-primary" onClick={loadWebinar}>
+          {t('registration.retry')}
+        </button>
       </div>
     );
   }
+
+  if (!webinar) {
+    return (
+      <div className="replay-error">
+        <h2>{t('registration.notFoundTitle')}</h2>
+        <p>{t('registration.notFoundMessage')}</p>
+      </div>
+    );
+  }
+
+  const getVideoEmbed = () => {
+    if (!webinar?.video_url) return null;
+    return buildVideoEmbedUrl(webinar.video_url, globalThis?.location?.origin || '');
+  };
+
+  const embedUrl = getVideoEmbed();
+  const presentation = webinar.settings?.presentation || {};
+  const cinemaEnabled = !!(embedUrl && presentation?.enabled);
 
   if (expired) {
     return (
@@ -109,14 +138,28 @@ export default function ReplayPage() {
         </div>
 
         <div className="replay-video">
-          {getVideoEmbed() ? (
-            <iframe
-              className="replay-iframe"
-              src={getVideoEmbed()}
-              title={webinar.title}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            />
+          {embedUrl ? (
+            cinemaEnabled ? (
+              <CinemaScreenVideo
+                src={embedUrl}
+                title={webinar.title}
+                shape={presentation.shape}
+                curveV={presentation.curveV}
+                curveH={presentation.curveH}
+                corner={presentation.corner}
+                shadow={presentation.shadow}
+                vignette={presentation.vignette}
+                vignetteColor={presentation.vignetteColor}
+              />
+            ) : (
+              <iframe
+                className="replay-iframe"
+                src={embedUrl}
+                title={webinar.title}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            )
           ) : (
             <div className="replay-placeholder">
               <PlayCircle size={64} />

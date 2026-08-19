@@ -7,7 +7,7 @@ import { useCountdown } from '../../hooks/useCountdown';
 import { useTrackEvent } from '../../hooks/useAnalytics';
 import { BLOCK_TYPES, ANALYTICS_EVENTS } from '../../lib/constants';
 import { useSeo } from '../../hooks/useSeo';
-import { useRegistrationSubmit } from '../../hooks/useRegistrationSubmit';
+import { useRegistrationSubmit, requestAccessEmail } from '../../hooks/useRegistrationSubmit';
 import { sanitizeInput, isValidEmail } from '../../lib/sanitize';
 import { CheckCircle, Clock, Quote, ArrowRight, ShieldCheck, CalendarDays, X, Users } from 'lucide-react';
 import './RegistrationPage.css';
@@ -35,6 +35,11 @@ export default function RegistrationPage() {
   const [success, setSuccess] = useState(false);
   const [showExitIntent, setShowExitIntent] = useState(false);
   const [hasShownExitIntent, setHasShownExitIntent] = useState(false);
+  const [loadError, setLoadError] = useState(false);
+  const [showRecover, setShowRecover] = useState(false);
+  const [recoverEmail, setRecoverEmail] = useState('');
+  const [recoverSubmitting, setRecoverSubmitting] = useState(false);
+  const [recoverSent, setRecoverSent] = useState(false);
   const nameInputRef = useRef(null);
 
   // SEO metadata optimization
@@ -54,29 +59,49 @@ export default function RegistrationPage() {
     return () => document.removeEventListener('mouseleave', handleMouseLeave);
   }, [hasShownExitIntent, success]);
 
-  useEffect(() => {
-    const fetch = async () => {
-      const { data: webinarData } = await supabase.rpc('get_public_webinar_by_slug', {
-        p_slug: slug,
-      });
+  const loadWebinar = async () => {
+    setLoading(true);
+    setLoadError(false);
 
-      if (webinarData) {
-        setWebinar(webinarData);
-        const regPage = webinarData.registration_pages?.[0];
-        if (regPage) {
-          setPage({
-            ...regPage,
-            blocks: typeof regPage.blocks === 'string' ? JSON.parse(regPage.blocks) : regPage.blocks,
-            theme: typeof regPage.theme === 'string' ? JSON.parse(regPage.theme) : regPage.theme,
-          });
-        }
-        setLoginConfig(webinarData.login_customizations || null);
-        trackEvent(webinarData.id, null, ANALYTICS_EVENTS.PAGE_VIEW);
-      }
+    const { data: webinarData, error: fetchError } = await supabase.rpc(
+      'get_public_webinar_by_slug',
+      { p_slug: slug }
+    );
+
+    if (fetchError) {
+      setLoadError(true);
       setLoading(false);
-    };
-    fetch();
+      return;
+    }
+
+    if (webinarData) {
+      setWebinar(webinarData);
+      const regPage = webinarData.registration_pages?.[0];
+      if (regPage) {
+        setPage({
+          ...regPage,
+          blocks: typeof regPage.blocks === 'string' ? JSON.parse(regPage.blocks) : regPage.blocks,
+          theme: typeof regPage.theme === 'string' ? JSON.parse(regPage.theme) : regPage.theme,
+        });
+      }
+      setLoginConfig(webinarData.login_customizations || null);
+      trackEvent(webinarData.id, null, ANALYTICS_EVENTS.PAGE_VIEW);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    loadWebinar();
   }, [slug]);
+
+  const handleRecoverSubmit = async (e) => {
+    e.preventDefault();
+    if (!isValidEmail(recoverEmail.trim().toLowerCase()) || !webinar) return;
+    setRecoverSubmitting(true);
+    await requestAccessEmail(webinar.id, recoverEmail.trim().toLowerCase());
+    setRecoverSubmitting(false);
+    setRecoverSent(true);
+  };
 
   const { submitRegistration, submitting, error, setError } = useRegistrationSubmit(webinar);
   const countdown = useCountdown(webinar?.scheduled_at);
@@ -152,10 +177,23 @@ export default function RegistrationPage() {
     );
   }
 
+  if (loadError) {
+    return (
+      <div className="reg-error">
+        <h2>{t('registration.loadErrorTitle')}</h2>
+        <p>{t('registration.loadErrorMessage')}</p>
+        <button type="button" className="btn btn-primary" onClick={loadWebinar}>
+          {t('registration.retry')}
+        </button>
+      </div>
+    );
+  }
+
   if (!webinar) {
     return (
       <div className="reg-error">
-        <h2>Webinar not found</h2>
+        <h2>{t('registration.notFoundTitle')}</h2>
+        <p>{t('registration.notFoundMessage')}</p>
       </div>
     );
   }
@@ -383,6 +421,35 @@ export default function RegistrationPage() {
                 <ShieldCheck size={15} />
                 Seus dados estão seguros. Não enviamos spam.
               </p>
+
+              {!showRecover ? (
+                <button
+                  type="button"
+                  className="reg-recover-toggle"
+                  onClick={() => setShowRecover(true)}
+                >
+                  {t('registration.recoverAccessPrompt')} {t('registration.recoverAccessButton')}
+                </button>
+              ) : recoverSent ? (
+                <p className="reg-recover-success">{t('registration.recoverAccessSuccess')}</p>
+              ) : (
+                <form className="reg-recover-form" onSubmit={handleRecoverSubmit}>
+                  <input
+                    type="email"
+                    className="input"
+                    placeholder={t('registration.recoverAccessEmailLabel')}
+                    value={recoverEmail}
+                    onChange={(e) => setRecoverEmail(e.target.value)}
+                    required
+                  />
+                  <button type="submit" className="btn btn-secondary" disabled={recoverSubmitting}>
+                    {recoverSubmitting ? <span className="spinner spinner-sm" /> : t('registration.recoverAccessSubmit')}
+                  </button>
+                  <button type="button" className="btn btn-link" onClick={() => setShowRecover(false)}>
+                    {t('registration.recoverAccessCancel')}
+                  </button>
+                </form>
+              )}
             </div>
           </section>
         );

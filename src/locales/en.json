@@ -251,7 +251,18 @@
     "seconds": "seconds",
     "successTitle": "Registration confirmed!",
     "successMessage": "You'll receive an email with access details.",
-    "alreadyRegistered": "You're already registered. We sent the access link to your email."
+    "alreadyRegistered": "You're already registered. We sent the access link to your email.",
+    "notFoundTitle": "Webinar not found",
+    "notFoundMessage": "This link may be incorrect or the webinar is no longer available.",
+    "loadErrorTitle": "Couldn't load this page",
+    "loadErrorMessage": "Check your connection and try again.",
+    "retry": "Try again",
+    "recoverAccessPrompt": "Already registered?",
+    "recoverAccessButton": "Resend my access",
+    "recoverAccessEmailLabel": "Your registration email",
+    "recoverAccessSubmit": "Send access link",
+    "recoverAccessSuccess": "If this email is registered, we've sent the access link.",
+    "recoverAccessCancel": "Cancel"
   },
   "room": {
     "title": "Webinar room",

@@ -251,7 +251,18 @@
     "seconds": "segundos",
     "successTitle": "Registro confirmado!",
     "successMessage": "Você receberá um e-mail com os detalhes de acesso.",
-    "alreadyRegistered": "Você já está inscrito. Enviamos o link de acesso para o seu e-mail."
+    "alreadyRegistered": "Você já está inscrito. Enviamos o link de acesso para o seu e-mail.",
+    "notFoundTitle": "Webinário não encontrado",
+    "notFoundMessage": "Este link pode estar incorreto ou o webinário não está mais disponível.",
+    "loadErrorTitle": "Não foi possível carregar",
+    "loadErrorMessage": "Verifique sua conexão e tente novamente.",
+    "retry": "Tentar novamente",
+    "recoverAccessPrompt": "Já se inscreveu?",
+    "recoverAccessButton": "Reenviar meu acesso",
+    "recoverAccessEmailLabel": "Seu e-mail de inscrição",
+    "recoverAccessSubmit": "Enviar link de acesso",
+    "recoverAccessSuccess": "Se este e-mail estiver inscrito, enviamos o link de acesso.",
+    "recoverAccessCancel": "Cancelar"
   },
   "room": {
     "title": "Sala do webinário",

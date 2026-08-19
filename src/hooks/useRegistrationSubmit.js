@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 import { logger } from '../lib/logger';
 import { WAIT_ROOM_JIT_DELAY_SECONDS } from '../lib/constants';
 
-async function requestAccessEmail(webinarId, email) {
+export async function requestAccessEmail(webinarId, email) {
   const { error: recoverError } = await supabase.rpc('recover_registration', {
     p_webinar_id: webinarId,
     p_email: email,
