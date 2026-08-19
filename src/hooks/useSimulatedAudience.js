@@ -47,7 +47,7 @@ export function useSimulatedAudience(webinar) {
     if (webinar?.audience_configs?.mode !== AUDIENCE_MODE.REAL || !webinar?.id) return;
 
     const channel = supabase.channel(`audience:${webinar.id}`, {
-      config: { presence: { key: crypto.randomUUID() } },
+      config: { presence: { key: window.crypto.randomUUID() } },
     });
 
     channel
