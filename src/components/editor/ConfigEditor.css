@@ -1,0 +1,121 @@
+/* --- ConfigEditor: Tela de Cinema --- */
+
+/* Toggle (mesmo padrão do CreateWebinarPage.css, p/ uso isolado do editor) */
+.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+}
+
+.toggle {
+  width: 36px;
+  height: 20px;
+  appearance: none;
+  background: var(--color-gray-200);
+  border-radius: var(--radius-full);
+  position: relative;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.toggle::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  background: white;
+  border-radius: 50%;
+  box-shadow: var(--shadow-xs);
+  transition: transform var(--transition-fast);
+}
+
+.toggle:checked {
+  background: var(--color-primary-600);
+}
+
+.toggle:checked::after {
+  transform: translateX(16px);
+}
+
+/* Range sliders — herdam .input do design system, mas precisam de reset */
+.input.range {
+  appearance: none;
+  -webkit-appearance: none;
+  height: 8px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-full);
+  background: var(--color-gray-200);
+  box-shadow: none;
+  cursor: pointer;
+}
+
+.input.range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--color-primary-600);
+  border: 2px solid var(--color-white);
+  box-shadow: var(--shadow-sm);
+  cursor: grab;
+}
+
+.input.range::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--color-primary-600);
+  border: 2px solid var(--color-white);
+  box-shadow: var(--shadow-sm);
+  cursor: grab;
+}
+
+.input.range:focus {
+  border-color: transparent;
+  box-shadow: 0 0 0 3px var(--color-primary-100);
+}
+
+/* Preview estático da silhueta (mesma geometria do player real) */
+.cinema-preview {
+  display: flex;
+  justify-content: center;
+  margin: var(--space-3) 0 var(--space-4);
+  padding: var(--space-5);
+  background: var(--color-gray-900);
+  border-radius: var(--radius-lg);
+}
+
+.cinema-preview__frame {
+  position: relative;
+  width: 320px;
+  max-width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: #000;
+}
+
+.cinema-preview__stage {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, #3a3a44 0%, #1a1a22 100%);
+}
+
+/* Falso botão "play" central para sinalizar o vídeo no preview */
+.cinema-preview__stage::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  transform: translate(-35%, -50%);
+  border-top: 14px solid transparent;
+  border-bottom: 14px solid transparent;
+  border-left: 22px solid rgba(255, 255, 255, 0.75);
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.5));
+}

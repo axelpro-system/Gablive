@@ -1,0 +1,92 @@
+/* Marketing landing tokens — scoped to .lp only.
+   Do not import into the Operate app shell (dashboard, auth, room). */
+
+.lp {
+  color-scheme: light;
+  --lp-ink: #141413;
+  --lp-ink-raised: #1a1918;
+  --lp-slate: #3d3c38;
+  --lp-muted: #6b6a64;
+  --lp-line: #141413;
+  --lp-canvas: #faf9f5;
+  --lp-paper: #f3f1ea;
+  --lp-on-primary: #ffffff;
+  --lp-red: #141413;
+  --lp-red-strong: #141413;
+  --lp-red-soft: #eceae3;
+  --lp-on-dark: #f3f1ea;
+  --lp-on-dark-muted: #c8c6bf;
+  --lp-display: clamp(2.5rem, 6vw, 58px);
+  --lp-h2: clamp(2rem, 4.4vw, 58px);
+  --lp-h3: clamp(1.25rem, 2vw, 1.75rem);
+  --lp-body: 16px;
+  --lp-label: 12px;
+  --lp-container: 1280px;
+  --lp-gutter: clamp(16px, 4vw, 68px);
+  --lp-section: clamp(58px, 10vw, 72px);
+  --lp-radius-sm: 8px;
+  --lp-radius-md: 16px;
+  --lp-radius-lg: 24px;
+  --lp-shadow-card: rgba(0, 0, 0, 0.01) 0px 2px 2px 0px, rgba(0, 0, 0, 0.02) 0px 4px 4px 0px, rgba(0, 0, 0, 0.04) 0px 16px 24px 0px;
+  --lp-duration-fast: 100ms;
+  --lp-duration-base: 200ms;
+  --lp-duration-slow: 800ms;
+  --lp-ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.lp .lp-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 12px 18px;
+  border: 1px solid transparent;
+  border-radius: var(--lp-radius-sm);
+  font-family: inherit;
+  font-size: var(--lp-label);
+  font-weight: 500;
+  letter-spacing: -0.24px;
+  line-height: 1.2;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color var(--lp-duration-base) var(--lp-ease),
+    border-color var(--lp-duration-base) var(--lp-ease),
+    color var(--lp-duration-base) var(--lp-ease),
+    box-shadow var(--lp-duration-base) var(--lp-ease);
+}
+
+.lp .lp-btn:focus-visible {
+  outline: 2px solid var(--lp-ink);
+  outline-offset: 2px;
+}
+
+.lp .lp-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.lp .lp-btn--primary {
+  color: var(--lp-on-primary);
+  background: var(--lp-ink);
+  border-color: var(--lp-ink);
+}
+
+.lp .lp-btn--primary:hover:not(:disabled) {
+  color: var(--lp-on-primary);
+  background: var(--lp-ink-raised);
+  border-color: var(--lp-ink-raised);
+}
+
+.lp .lp-btn--ghost {
+  color: var(--lp-ink);
+  background: transparent;
+  border-color: var(--lp-ink);
+}
+
+.lp .lp-btn--ghost:hover:not(:disabled) {
+  color: var(--lp-ink);
+  background: var(--lp-paper);
+  border-color: var(--lp-ink);
+}

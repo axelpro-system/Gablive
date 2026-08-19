@@ -1,0 +1,60 @@
+/* --- Cinema Screen Video ---
+ * Player com silhueta "tela de cinema":
+ *  - clip-path curvo (definido inline via JS, medido por ResizeObserver)
+ *  - drop-shadow segue a silhueta (aplicado inline no wrapper clipado)
+ *  - vinheta interna herda o clip do pai (não precisa do próprio path)
+ *  - barra de progresso curva via SVG pathLength="100"
+ */
+
+.cinema-video {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #000;
+}
+
+.cinema-video__media {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  border: none;
+  object-fit: cover;
+  display: block;
+}
+
+/* Vinheta: filha do container clipado — acompanha a silhueta automaticamente */
+.cinema-video__vignette {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* Barra de progresso curva (renderizada por cima da vinheta, abaixo dos overlays) */
+.cinema-video__progress {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 3;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.cinema-video__progress-track,
+.cinema-video__progress-bar {
+  stroke-width: 4;
+  stroke-linecap: round;
+}
+
+.cinema-video__progress-track {
+  stroke: rgba(255, 255, 255, 0.18);
+}
+
+.cinema-video__progress-bar {
+  stroke: var(--gablive-brand-red, #ef2b2d);
+  transition: stroke-dashoffset 0.4s linear;
+}
