@@ -7,6 +7,9 @@ import {
   normalizePayload,
   isApprovedPurchaseEvent,
 } from "../_shared/provider-registry.ts"
+import { decryptSecretsObject } from "../_shared/crypto.ts"
+
+const REFUND_EVENT_TYPES = ["purchase.refunded", "purchase.chargeback", "purchase.cancelled"]
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -109,7 +112,7 @@ serve(async (req) => {
     .eq("integration_id", integration.id)
     .maybeSingle()
 
-  const storedSecrets = (secretRow?.secrets || {}) as Record<string, string>
+  const storedSecrets = await decryptSecretsObject(secretRow?.secrets as Record<string, unknown>)
 
   // Extract webhook secret from request headers/body
   const headerRecord: Record<string, string> = {}
@@ -223,6 +226,10 @@ serve(async (req) => {
     return json({ error: "Failed to persist event" }, 500)
   }
 
+  const buyerEmail = normalized.buyer?.email || null
+  const buyerName = normalized.buyer?.name || buyerEmail?.split("@")[0] || "Comprador"
+  let registrationId: string | null = null
+
   if (mapStatus === "processed" && webinarId && approved) {
     if (normalized.externalEventId) {
       await supabase.from("purchases").upsert(
@@ -231,7 +238,7 @@ serve(async (req) => {
           webinar_id: webinarId,
           provider,
           provider_transaction_id: normalized.externalEventId,
-          buyer_email: normalized.buyer?.email || null,
+          buyer_email: buyerEmail,
           amount,
           currency: normalized.currency || "BRL",
           status: "approved",
@@ -241,21 +248,73 @@ serve(async (req) => {
       )
     }
 
+    if (buyerEmail) {
+      const { data: registration, error: registrationError } = await supabase
+        .from("registrations")
+        .upsert(
+          {
+            webinar_id: webinarId,
+            name: buyerName,
+            email: buyerEmail,
+            registered_at: new Date().toISOString(),
+          },
+          { onConflict: "webinar_id,email" },
+        )
+        .select("id")
+        .single()
+
+      if (registrationError) {
+        console.error("Failed to register buyer from purchase webhook:", registrationError)
+      } else {
+        registrationId = registration.id
+        await supabase.from("sales_notifications").insert({
+          webinar_id: webinarId,
+          buyer_name: buyerName,
+          buyer_location: null,
+          product_name: normalized.productName || "Produto",
+          show_at_seconds: 0,
+        })
+      }
+    }
+
     await supabase.from("analytics_events").insert({
       webinar_id: webinarId,
-      registration_id: null,
+      registration_id: registrationId,
       event_type: "purchase",
       event_data: {
         provider,
         provider_event_id: providerEventId,
         transaction_id: normalized.externalEventId,
         product_id: normalized.externalProductId,
-        buyer_email: normalized.buyer?.email,
+        buyer_email: buyerEmail,
         amount,
         currency: normalized.currency,
         source: "purchase-webhook",
       },
     })
+  } else if (REFUND_EVENT_TYPES.includes(normalized.eventType) && webinarId && buyerEmail) {
+    const { error: cancelError } = await supabase
+      .from("registrations")
+      .delete()
+      .eq("webinar_id", webinarId)
+      .eq("email", buyerEmail)
+
+    if (cancelError) {
+      console.error("Failed to cancel registration after refund/chargeback:", cancelError)
+    } else {
+      await supabase.from("analytics_events").insert({
+        webinar_id: webinarId,
+        registration_id: null,
+        event_type: "purchase_refunded",
+        event_data: {
+          provider,
+          provider_event_id: providerEventId,
+          transaction_id: normalized.externalEventId,
+          buyer_email: buyerEmail,
+          source: "purchase-webhook",
+        },
+      })
+    }
   }
 
   return json({
