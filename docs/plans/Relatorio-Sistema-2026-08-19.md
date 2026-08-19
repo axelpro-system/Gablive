@@ -118,7 +118,7 @@ Leitura pública segura (`get_public_webinar_by_slug`, `get_registration_by_id`,
 ### 5.2 Features maiores fora de escopo (deliberadamente adiadas — ver `.specs/project/ROADMAP.md`)
 
 - **Onboarding guiado** para operador novo (primeiro webinar, checklist, tour)
-- **CRUD de webinar mais rico**: duplicar, arquivar, templates recorrentes
+- ~~CRUD de webinar mais rico: duplicar, arquivar, templates recorrentes~~ — ✅ implementado em 2026-08-19 (commit `be3fc30`): duplicar (clona registration page, CTAs, audiência, login, e-mails), arquivar/desarquivar, marcar como template, abas Ativos/Templates/Arquivados
 - **Billing/plano/limites de uso** — não existe nenhuma noção de plano pago ou cap de uso visível
 - **Analytics com comparação temporal** e funil de conversão por etapa (hoje só snapshot atual)
 - **Notificações in-app/e-mail** para o operador (webinar prestes a começar, webhook falhando)
