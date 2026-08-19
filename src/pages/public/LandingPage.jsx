@@ -97,7 +97,7 @@ function Navbar() {
     <nav className={`lp-navbar${isScrolled ? ' is-scrolled' : ''}`} aria-label="Navegação principal">
       <div className="lp-navbar__inner">
         <Link to="/" className="lp-navbar__logo" aria-label="GabLive — início">
-          <img src="/logo-dark.svg" alt="" width="126" height="30" />
+          <img src="/logo.svg" alt="" width="126" height="30" />
         </Link>
 
         <ul className="lp-navbar__links">
@@ -107,10 +107,13 @@ function Navbar() {
           <li><a href="#faq">FAQ</a></li>
         </ul>
 
-        <a href="#waitlist" className="lp-navbar__cta">
-          Entrar na lista
-          <ArrowRight size={16} aria-hidden="true" />
-        </a>
+        <div className="lp-navbar__actions">
+          <Link to="/auth/login" className="lp-navbar__login">Entrar</Link>
+          <a href="#waitlist" className="lp-navbar__cta lp-btn lp-btn--primary">
+            Entrar na lista
+            <ArrowRight size={16} aria-hidden="true" />
+          </a>
+        </div>
 
         <button
           ref={toggleRef}
@@ -135,7 +138,8 @@ function Navbar() {
         <a href="#how-it-works" onClick={closeMenu}>Como funciona</a>
         <a href="#agencies" onClick={closeMenu}>Para agências</a>
         <a href="#faq" onClick={closeMenu}>FAQ</a>
-        <a href="#waitlist" className="lp-navbar__mobile-cta" onClick={closeMenu}>
+        <Link to="/auth/login" onClick={closeMenu}>Entrar</Link>
+        <a href="#waitlist" className="lp-navbar__mobile-cta lp-btn lp-btn--primary" onClick={closeMenu}>
           Entrar na lista de espera
           <ArrowRight size={18} aria-hidden="true" />
         </a>
@@ -191,11 +195,11 @@ function Hero() {
           </p>
 
           <div className="lp-hero__actions">
-            <a className="lp-hero__cta-primary" href="#waitlist">
+            <a className="lp-hero__cta-primary lp-btn lp-btn--primary" href="#waitlist">
               Entrar na lista de espera
               <ArrowRight size={18} aria-hidden="true" />
             </a>
-            <a className="lp-hero__cta-secondary" href="#features">
+            <a className="lp-hero__cta-secondary lp-btn lp-btn--ghost" href="#features">
               Explorar o produto
               <ChevronRight size={17} aria-hidden="true" />
             </a>
@@ -315,8 +319,8 @@ function ProductStory() {
             <svg viewBox="0 0 800 230" role="img" aria-label="Curva ilustrativa de retenção ao longo do webinar">
               <defs>
                 <linearGradient id="retentionArea" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#ef2b2d" stopOpacity=".24" />
-                  <stop offset="100%" stopColor="#ef2b2d" stopOpacity="0" />
+                  <stop offset="0%" stopColor="#141413" stopOpacity=".22" />
+                  <stop offset="100%" stopColor="#141413" stopOpacity="0" />
                 </linearGradient>
               </defs>
               <path className="lp-story__chart-area" d="M0 45 C90 52 130 80 210 76 S340 112 420 105 S520 155 610 145 S710 177 800 165 L800 230 L0 230 Z" />
@@ -430,7 +434,7 @@ function HowItWorks() {
             <strong>Dados acionáveis</strong>
           </li>
         </ol>
-        <a className="lp-flow__cta" href="#waitlist">
+        <a className="lp-flow__cta lp-btn lp-btn--primary" href="#waitlist">
           Quero operar com esse nível de controle
           <ArrowRight size={18} aria-hidden="true" />
         </a>
@@ -625,7 +629,7 @@ function Waitlist() {
               <label htmlFor="waitlist-website">Website</label>
               <input id="waitlist-website" name="website" type="text" tabIndex="-1" autoComplete="off" />
             </div>
-            <button type="submit" disabled={status === 'loading'}>
+            <button type="submit" className="lp-btn lp-btn--primary" disabled={status === 'loading'}>
               {status === 'loading' ? 'Registrando…' : 'Entrar na lista de espera'}
               {status !== 'loading' && <ArrowRight size={18} aria-hidden="true" />}
             </button>
@@ -647,7 +651,7 @@ function Footer() {
         <div className="lp-footer__grid">
           <div className="lp-footer__brand">
             <Link to="/" className="lp-footer__logo" aria-label="GabLive — início">
-              <img src="/logo-dark.svg" alt="" width="126" height="30" />
+              <img src="/logo.svg" alt="" width="126" height="30" />
             </Link>
             <p className="lp-footer__tagline">
               Webinar analytics para operações que vendem conhecimento.
@@ -655,7 +659,7 @@ function Footer() {
           </div>
 
           <div className="lp-footer__col">
-            <h4>Produto</h4>
+            <h3>Produto</h3>
             <ul>
               <li><a href="#features">Visão geral</a></li>
               <li><a href="#how-it-works">Como funciona</a></li>
@@ -665,7 +669,7 @@ function Footer() {
           </div>
 
           <div className="lp-footer__col">
-            <h4>Acesso</h4>
+            <h3>Acesso</h3>
             <ul>
               <li><a href="#waitlist">Lista de espera</a></li>
               <li><Link to="/auth/login">Entrar</Link></li>
@@ -673,7 +677,7 @@ function Footer() {
           </div>
 
           <div className="lp-footer__col">
-            <h4>Legal</h4>
+            <h3>Legal</h3>
             <ul>
               <li><a href="#privacy">Privacidade</a></li>
               <li><a href="mailto:contato@gablive.com.br">Contato</a></li>
@@ -708,7 +712,7 @@ function CookieBar() {
         Usamos apenas recursos essenciais para o funcionamento da página.
         <a href="#privacy"> Saiba como tratamos seus dados.</a>
       </p>
-      <button type="button" onClick={accept}>Entendi</button>
+      <button type="button" className="lp-btn lp-btn--primary" onClick={accept}>Entendi</button>
     </aside>
   );
 }
