@@ -263,7 +263,9 @@
     "recoverAccessSubmit": "Send access link",
     "recoverAccessSuccess": "If this email is registered, we've sent the access link.",
     "recoverAccessCancel": "Cancel",
-    "waitlistedMessage": "Confirmed spots are full — you're on the waitlist and we'll notify you if a spot opens up."
+    "waitlistedMessage": "Confirmed spots are full — you're on the waitlist and we'll notify you if a spot opens up.",
+    "consentLabel": "I agree to provide my data to receive communications about this webinar, per the Privacy Policy.",
+    "consentRequired": "You must accept the use of your data to register."
   },
   "room": {
     "title": "Webinar room",

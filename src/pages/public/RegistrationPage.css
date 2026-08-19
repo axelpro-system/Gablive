@@ -238,6 +238,21 @@
   color: #22c55e;
 }
 
+.reg-consent-checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 14px;
+  font-size: 12px;
+  color: #a1a1aa;
+  cursor: pointer;
+}
+
+.reg-consent-checkbox input {
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
 .reg-recover-toggle {
   display: block;
   margin: 14px auto 0;

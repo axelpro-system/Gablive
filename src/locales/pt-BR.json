@@ -263,7 +263,9 @@
     "recoverAccessSubmit": "Enviar link de acesso",
     "recoverAccessSuccess": "Se este e-mail estiver inscrito, enviamos o link de acesso.",
     "recoverAccessCancel": "Cancelar",
-    "waitlistedMessage": "As vagas confirmadas se esgotaram — você está na lista de espera e será avisado se surgir uma vaga."
+    "waitlistedMessage": "As vagas confirmadas se esgotaram — você está na lista de espera e será avisado se surgir uma vaga.",
+    "consentLabel": "Concordo em fornecer meus dados para receber comunicações sobre este webinário, conforme a Política de Privacidade.",
+    "consentRequired": "É necessário aceitar o uso dos seus dados para se inscrever."
   },
   "room": {
     "title": "Sala do webinário",

@@ -37,6 +37,7 @@ export default function RegistrationPage() {
   const [showExitIntent, setShowExitIntent] = useState(false);
   const [hasShownExitIntent, setHasShownExitIntent] = useState(false);
   const [loadError, setLoadError] = useState(false);
+  const [lgpdConsent, setLgpdConsent] = useState(false);
   const [showRecover, setShowRecover] = useState(false);
   const [recoverEmail, setRecoverEmail] = useState('');
   const [recoverSubmitting, setRecoverSubmitting] = useState(false);
@@ -143,6 +144,11 @@ export default function RegistrationPage() {
 
     if (formData.phone.trim() && !isValidPhone(formData.phone)) {
       setError('Por favor, informe um número de telefone válido.');
+      return;
+    }
+
+    if (!lgpdConsent) {
+      setError(t('registration.consentRequired'));
       return;
     }
 
@@ -406,6 +412,15 @@ export default function RegistrationPage() {
                     />
                   </div>
                 )}
+                <label className="reg-consent-checkbox">
+                  <input
+                    type="checkbox"
+                    checked={lgpdConsent}
+                    onChange={(e) => setLgpdConsent(e.target.checked)}
+                    required
+                  />
+                  <span>{t('registration.consentLabel')}</span>
+                </label>
                 <button
                   type="submit"
                   className="btn btn-primary btn-xl reg-submit"
