@@ -19,17 +19,30 @@ import {
   Trash2,
   Copy,
   BarChart3,
+  Files,
+  Archive,
+  ArchiveRestore,
+  Star,
+  StarOff,
 } from 'lucide-react';
 import { useState } from 'react';
 import './WebinarsListPage.css';
 
+const VIEWS = [
+  { id: 'active', label: 'Ativos' },
+  { id: 'templates', label: 'Templates' },
+  { id: 'archived', label: 'Arquivados' },
+];
+
 export default function WebinarsListPage() {
   const { t, i18n } = useTranslation();
-  const { webinars, loading, refetch } = useWebinars();
+  const [view, setView] = useState('active');
+  const { webinars, loading, refetch, archiveWebinar, setTemplate, duplicateWebinar } = useWebinars({ view });
   const { orgId } = useOrg();
   const { user } = useAuth();
   const [openMenu, setOpenMenu] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [busyAction, setBusyAction] = useState(null);
 
   const dateLocale = i18n.language === 'pt-BR' ? ptBR : enUS;
 
@@ -49,6 +62,38 @@ export default function WebinarsListPage() {
     const url = `${window.location.origin}/register/${slug}`;
     navigator.clipboard.writeText(url);
     setOpenMenu(null);
+  };
+
+  const handleDuplicate = async (webinar) => {
+    setOpenMenu(null);
+    setBusyAction(webinar.id);
+    try {
+      await duplicateWebinar(webinar.id);
+    } catch {
+      // Erro já é reportado via console pelo cliente Supabase; refetch mantém a lista consistente.
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
+  const handleToggleArchive = async (webinar) => {
+    setOpenMenu(null);
+    setBusyAction(webinar.id);
+    try {
+      await archiveWebinar(webinar.id, !webinar.archived_at);
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
+  const handleToggleTemplate = async (webinar) => {
+    setOpenMenu(null);
+    setBusyAction(webinar.id);
+    try {
+      await setTemplate(webinar.id, !webinar.is_template);
+    } finally {
+      setBusyAction(null);
+    }
   };
 
   if (loading) {
@@ -87,16 +132,33 @@ export default function WebinarsListPage() {
         </Link>
       </div>
 
+      <div className="webinars-view-tabs">
+        {VIEWS.map((v) => (
+          <button
+            key={v.id}
+            type="button"
+            className={`webinars-view-tab ${view === v.id ? 'active' : ''}`}
+            onClick={() => setView(v.id)}
+          >
+            {v.label}
+          </button>
+        ))}
+      </div>
+
       {webinars.length === 0 ? (
         <div className="card">
           <div className="empty-state">
             <Video size={48} className="empty-state-icon" />
-            <p className="empty-state-title">{t('dashboard.noWebinarsYet')}</p>
-            <p className="empty-state-description">{t('dashboard.createFirst')}</p>
-            <Link to="/webinars/create" className="btn btn-create">
-              <Plus size={18} />
-              {t('webinar.createWebinar')}
-            </Link>
+            <p className="empty-state-title">
+              {view === 'active' ? t('dashboard.noWebinarsYet') : `Nenhum webinário ${view === 'templates' ? 'marcado como template' : 'arquivado'}.`}
+            </p>
+            {view === 'active' && <p className="empty-state-description">{t('dashboard.createFirst')}</p>}
+            {view === 'active' && (
+              <Link to="/webinars/create" className="btn btn-create">
+                <Plus size={18} />
+                {t('webinar.createWebinar')}
+              </Link>
+            )}
           </div>
         </div>
       ) : (
@@ -122,6 +184,16 @@ export default function WebinarsListPage() {
                           ? t('webinar.typeLive')
                           : t('webinar.typeRecorded')}
                       </span>
+                      {webinar.is_template && (
+                        <span className="badge badge-warning">
+                          <Star size={10} /> Template
+                        </span>
+                      )}
+                      {webinar.archived_at && (
+                        <span className="badge badge-gray">
+                          <Archive size={10} /> Arquivado
+                        </span>
+                      )}
                     </div>
 
                     <div className="dropdown">
@@ -165,6 +237,31 @@ export default function WebinarsListPage() {
                             <BarChart3 size={16} />
                             {t('analytics.title')}
                           </Link>
+                          <div className="dropdown-divider" />
+                          <button
+                            className="dropdown-item"
+                            disabled={busyAction === webinar.id}
+                            onClick={() => handleDuplicate(webinar)}
+                          >
+                            <Files size={16} />
+                            Duplicar
+                          </button>
+                          <button
+                            className="dropdown-item"
+                            disabled={busyAction === webinar.id}
+                            onClick={() => handleToggleTemplate(webinar)}
+                          >
+                            {webinar.is_template ? <StarOff size={16} /> : <Star size={16} />}
+                            {webinar.is_template ? 'Remover de templates' : 'Marcar como template'}
+                          </button>
+                          <button
+                            className="dropdown-item"
+                            disabled={busyAction === webinar.id}
+                            onClick={() => handleToggleArchive(webinar)}
+                          >
+                            {webinar.archived_at ? <ArchiveRestore size={16} /> : <Archive size={16} />}
+                            {webinar.archived_at ? 'Desarquivar' : 'Arquivar'}
+                          </button>
                           <div className="dropdown-divider" />
                           <button
                             className="dropdown-item danger"

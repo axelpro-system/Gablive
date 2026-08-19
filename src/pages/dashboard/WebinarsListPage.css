@@ -4,6 +4,29 @@
   margin: 0 auto;
 }
 
+.webinars-view-tabs {
+  display: flex;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+  border-bottom: 1px solid var(--color-gray-200);
+}
+
+.webinars-view-tab {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: var(--space-2) var(--space-1);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-gray-500);
+  cursor: pointer;
+}
+
+.webinars-view-tab.active {
+  color: var(--color-primary-600);
+  border-bottom-color: var(--color-primary-600);
+}
+
 .webinars-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));

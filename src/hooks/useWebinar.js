@@ -55,8 +55,9 @@ async function insertWebinarWithUniqueSlug(payload, base) {
   throw new Error('Não foi possível gerar um endereço único para o webinário.');
 }
 
-export function useWebinars() {
+export function useWebinars({ view = 'active' } = {}) {
   const { orgId } = useOrg();
+  const { user } = useAuth();
   const [webinars, setWebinars] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -69,11 +70,21 @@ export function useWebinars() {
       return;
     }
     setLoading(true);
-    const { data, error: err } = await supabase
+    let query = supabase
       .from('webinars')
       .select('*, registrations(count)')
       .eq('org_id', orgId)
       .order('created_at', { ascending: false });
+
+    if (view === 'active') {
+      query = query.is('archived_at', null).eq('is_template', false);
+    } else if (view === 'archived') {
+      query = query.not('archived_at', 'is', null);
+    } else if (view === 'templates') {
+      query = query.eq('is_template', true).is('archived_at', null);
+    }
+
+    const { data, error: err } = await query;
 
     if (err) {
       setError(err.message);
@@ -82,13 +93,136 @@ export function useWebinars() {
       setError(null);
     }
     setLoading(false);
-  }, [orgId]);
+  }, [orgId, view]);
 
   useEffect(() => {
     fetchWebinars();
   }, [fetchWebinars]);
 
-  return { webinars, loading, error, refetch: fetchWebinars };
+  const archiveWebinar = async (id, archived) => {
+    const { error: err } = await supabase
+      .from('webinars')
+      .update({ archived_at: archived ? new Date().toISOString() : null })
+      .eq('id', id);
+    if (err) throw err;
+
+    const target = webinars.find((w) => w.id === id);
+    logAudit({
+      orgId,
+      userId: user?.id,
+      action: 'update',
+      entityType: 'webinar',
+      entityId: id,
+      description: `Webinar "${target?.title || id}" ${archived ? 'arquivado' : 'desarquivado'}`,
+    });
+
+    await fetchWebinars();
+  };
+
+  const setTemplate = async (id, isTemplate) => {
+    const { error: err } = await supabase
+      .from('webinars')
+      .update({ is_template: isTemplate })
+      .eq('id', id);
+    if (err) throw err;
+
+    const target = webinars.find((w) => w.id === id);
+    logAudit({
+      orgId,
+      userId: user?.id,
+      action: 'update',
+      entityType: 'webinar',
+      entityId: id,
+      description: `Webinar "${target?.title || id}" ${isTemplate ? 'marcado como' : 'removido de'} template`,
+    });
+
+    await fetchWebinars();
+  };
+
+  const duplicateWebinar = async (id) => {
+    const { data: source, error: fetchErr } = await supabase
+      .from('webinars')
+      .select(`
+        *,
+        registration_pages(*),
+        cta_configs(*),
+        audience_configs(*),
+        login_customizations(*),
+        email_configs(*)
+      `)
+      .eq('id', id)
+      .single();
+
+    if (fetchErr) throw fetchErr;
+
+    const { base, slug } = await generateUniqueSlug(orgId, `${source.title} (cópia)`, source.video_url || '');
+
+    const {
+      id: _sourceId, created_at: _createdAt, updated_at: _updatedAt,
+      registration_pages, cta_configs, audience_configs, login_customizations, email_configs,
+      ...webinarFields
+    } = source;
+
+    const payload = {
+      ...webinarFields,
+      org_id: orgId,
+      slug,
+      title: `${source.title} (cópia)`,
+      status: 'draft',
+      scheduled_at: null,
+      is_template: false,
+      archived_at: null,
+    };
+
+    const created = await insertWebinarWithUniqueSlug(payload, base);
+
+    if (registration_pages?.[0]) {
+      const { id: _rpId, webinar_id: _rpWid, created_at: _rpCreated, updated_at: _rpUpdated, ...rpFields } = registration_pages[0];
+      await supabase.from('registration_pages').insert({ ...rpFields, webinar_id: created.id });
+    }
+
+    if (audience_configs?.[0]) {
+      const { id: _acId, webinar_id: _acWid, created_at: _acCreated, updated_at: _acUpdated, ...acFields } = audience_configs[0];
+      await supabase.from('audience_configs').insert({ ...acFields, webinar_id: created.id });
+    }
+
+    if (login_customizations?.[0]) {
+      const { id: _lcId, webinar_id: _lcWid, created_at: _lcCreated, updated_at: _lcUpdated, ...lcFields } = login_customizations[0];
+      await supabase.from('login_customizations').insert({ ...lcFields, webinar_id: created.id });
+    }
+
+    if (cta_configs?.length) {
+      const rows = cta_configs.map(({ id: _ctaId, webinar_id: _ctaWid, created_at: _ctaCreated, updated_at: _ctaUpdated, ...ctaFields }) => ({
+        ...ctaFields,
+        webinar_id: created.id,
+      }));
+      await supabase.from('cta_configs').insert(rows);
+    }
+
+    if (email_configs?.length) {
+      const rows = email_configs.map(({ id: _ecId, webinar_id: _ecWid, created_at: _ecCreated, updated_at: _ecUpdated, ...ecFields }) => ({
+        ...ecFields,
+        webinar_id: created.id,
+      }));
+      await supabase.from('email_configs').insert(rows);
+    } else {
+      await supabase.from('email_configs').insert(defaultEmailConfigsForWebinar(created.id));
+    }
+
+    logAudit({
+      orgId,
+      userId: user?.id,
+      action: 'create',
+      entityType: 'webinar',
+      entityId: created.id,
+      description: `Webinar "${created.title}" duplicado a partir de "${source.title}"`,
+    });
+
+    await fetchWebinars();
+    return created;
+  };
+
+  return { webinars, loading, error, refetch: fetchWebinars, archiveWebinar, setTemplate, duplicateWebinar };
 }
 
 export function useWebinar(id) {
