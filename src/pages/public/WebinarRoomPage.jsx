@@ -66,6 +66,8 @@ export default function WebinarRoomPage() {
   const [activeMobileTab, setActiveMobileTab] = useState('chat');
   const [chatInput, setChatInput] = useState('');
   const [chatError, setChatError] = useState('');
+  const [aiTyping, setAiTyping] = useState(false);
+  const aiPendingCountRef = useRef(0);
   const [liked, setLiked] = useState(() => {
     const stored = localStorage.getItem(`webinar-like-${slug}`);
     return stored === 'true';
@@ -135,6 +137,8 @@ export default function WebinarRoomPage() {
     // AI Agent integration — the agent now watches every message and decides
     // for itself (server-side) whether a reply is warranted, so no keyword gate here.
     if (webinar?.ai_agent_enabled) {
+      aiPendingCountRef.current += 1;
+      setAiTyping(true);
       supabase.functions
         .invoke('gemini-chat', {
           body: {
@@ -143,7 +147,11 @@ export default function WebinarRoomPage() {
             user_name: registration?.name || 'Participante',
           },
         })
-        .catch((err) => console.error('Failed to invoke AI agent', err));
+        .catch((err) => console.error('Failed to invoke AI agent', err))
+        .finally(() => {
+          aiPendingCountRef.current = Math.max(0, aiPendingCountRef.current - 1);
+          if (aiPendingCountRef.current === 0) setAiTyping(false);
+        });
     }
   };
 
@@ -474,6 +482,17 @@ export default function WebinarRoomPage() {
                     </div>
                   </div>
                 ))
+              )}
+              {aiTyping && (
+                <div className="room-chat-message ai-message ai-typing">
+                  <div className="room-chat-avatar">🤖</div>
+                  <div className="room-chat-bubble">
+                    <span className="room-chat-name">Gablive AI</span>
+                    <span className="room-chat-typing-dots" aria-label="IA está digitando">
+                      <span /><span /><span />
+                    </span>
+                  </div>
+                </div>
               )}
               <div ref={chatEndRef} />
             </div>
