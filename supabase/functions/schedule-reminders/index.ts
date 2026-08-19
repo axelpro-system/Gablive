@@ -25,6 +25,38 @@ interface Registration {
   name: string
 }
 
+const INSERT_MAX_ATTEMPTS = 3
+const INSERT_RETRY_DELAY_MS = 300
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+/**
+ * Retries a queue insert on transient failure. Without this, a single
+ * dropped DB connection during the send window silently loses that
+ * reminder forever — the next cron run sees sendAt in the past and
+ * skips it (see the `sendAt <= new Date()` check below).
+ */
+async function insertQueueEntryWithRetry(
+  supabaseClient: ReturnType<typeof createClient>,
+  payload: Record<string, unknown>,
+): Promise<{ error: { message: string } | null }> {
+  let lastError: { message: string } | null = null
+
+  for (let attempt = 1; attempt <= INSERT_MAX_ATTEMPTS; attempt++) {
+    const { error } = await supabaseClient.from("email_queue").insert(payload)
+    if (!error) return { error: null }
+
+    lastError = error
+    if (attempt < INSERT_MAX_ATTEMPTS) {
+      await sleep(INSERT_RETRY_DELAY_MS * attempt)
+    }
+  }
+
+  return { error: lastError }
+}
+
 serve(async (_req) => {
   const supabaseClient = createClient(
     Deno.env.get("SUPABASE_URL") ?? "",
@@ -109,17 +141,15 @@ serve(async (_req) => {
         continue
       }
 
-      const { error: insertError } = await supabaseClient
-        .from("email_queue")
-        .insert({
-          email_config_id: config.id,
-          registration_id: reg.id,
-          scheduled_at: sendAt.toISOString(),
-          status: "pending",
-        })
+      const { error: insertError } = await insertQueueEntryWithRetry(supabaseClient, {
+        email_config_id: config.id,
+        registration_id: reg.id,
+        scheduled_at: sendAt.toISOString(),
+        status: "pending",
+      })
 
       if (insertError) {
-        console.error(`Error inserting queue for ${reg.email}:`, insertError)
+        console.error(`Error inserting queue for ${reg.email} after ${INSERT_MAX_ATTEMPTS} attempts:`, insertError)
       } else {
         scheduled++
       }
