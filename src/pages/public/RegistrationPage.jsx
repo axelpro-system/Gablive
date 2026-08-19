@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import DOMPurify from 'dompurify';
 import { supabase } from '../../lib/supabase';
@@ -17,6 +17,14 @@ export default function RegistrationPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { trackEvent } = useTrackEvent();
+  const [searchParams] = useSearchParams();
+  const utm = {
+    utm_source: searchParams.get('utm_source'),
+    utm_medium: searchParams.get('utm_medium'),
+    utm_campaign: searchParams.get('utm_campaign'),
+    utm_term: searchParams.get('utm_term'),
+    utm_content: searchParams.get('utm_content'),
+  };
 
   const [webinar, setWebinar] = useState(null);
   const [page, setPage] = useState(null);
@@ -111,6 +119,7 @@ export default function RegistrationPage() {
       cleanName,
       cleanEmail,
       formData.phone ? sanitizeInput(formData.phone) : null,
+      utm,
     );
 
     if (!result.success || !result.reg?.id) {

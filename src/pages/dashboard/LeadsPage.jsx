@@ -23,9 +23,10 @@ function sanitizeSearchTerm(raw) {
 function buildLeadsQuery(webIds, searchTerm) {
   let query = supabase
     .from('registrations')
-    .select('id, name, email, phone, registered_at, attended, webinar_id', {
-      count: 'exact',
-    })
+    .select(
+      'id, name, email, phone, registered_at, attended, webinar_id, utm_source, utm_medium, utm_campaign',
+      { count: 'exact' }
+    )
     .in('webinar_id', webIds)
     .order('registered_at', { ascending: false });
 
@@ -324,6 +325,9 @@ export default function LeadsPage() {
             new Date(r.registered_at).toLocaleString('pt-BR'),
             r.attended ? 'Sim' : 'Não',
             formatWatchDuration(watchById[r.id] || 0),
+            r.utm_source || '',
+            r.utm_medium || '',
+            r.utm_campaign || '',
           ]);
         }
 
@@ -333,7 +337,7 @@ export default function LeadsPage() {
 
       downloadCsv(
         `leads-${new Date().toISOString().split('T')[0]}.csv`,
-        ['Nome', 'Email', 'Telefone', 'Webinário', 'Data de Inscrição', 'Compareceu', 'Tempo na sala'],
+        ['Nome', 'Email', 'Telefone', 'Webinário', 'Data de Inscrição', 'Compareceu', 'Tempo na sala', 'UTM Source', 'UTM Medium', 'UTM Campaign'],
         allRows
       );
     } catch (err) {

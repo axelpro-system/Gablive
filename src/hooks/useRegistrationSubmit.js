@@ -21,7 +21,7 @@ export function useRegistrationSubmit(webinar) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  const submitRegistration = async (cleanName, cleanEmail, cleanPhone) => {
+  const submitRegistration = async (cleanName, cleanEmail, cleanPhone, utm = {}) => {
     setSubmitting(true);
     setError('');
 
@@ -54,6 +54,11 @@ export function useRegistrationSubmit(webinar) {
         p_email: cleanEmail,
         p_phone: cleanPhone || null,
         p_session_start_at: sessionStartAt,
+        p_utm_source: utm.utm_source || null,
+        p_utm_medium: utm.utm_medium || null,
+        p_utm_campaign: utm.utm_campaign || null,
+        p_utm_term: utm.utm_term || null,
+        p_utm_content: utm.utm_content || null,
       });
 
       if (regError) {
@@ -84,8 +89,8 @@ export function useRegistrationSubmit(webinar) {
       return { success: true, reg };
     } catch (err) {
       logger.error('Registration process failed', err, { webinarId: webinar.id, email: cleanEmail });
-      setError(err.message || 'Error registering');
-      return { success: false, error: err.message };
+      setError('Não foi possível concluir sua inscrição. Tente novamente em instantes.');
+      return { success: false, error: 'unexpected' };
     } finally {
       setSubmitting(false);
     }
