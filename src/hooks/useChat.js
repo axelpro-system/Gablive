@@ -13,9 +13,15 @@ export function useChat(webinarId, userName) {
   const channelRef = useRef(null);
   const lastSendAtMsRef = useRef(null);
 
-  // Fetch existing messages
+  // Fetch history + subscribe to realtime, with reconnect-on-drop
+  // (exponential backoff, capped). History is re-fetched on every
+  // (re)connect so a dropped connection doesn't silently lose messages.
   useEffect(() => {
     if (!webinarId) return;
+
+    let cancelled = false;
+    let reconnectTimeoutId = null;
+    let retryCount = 0;
 
     const fetchMessages = async () => {
       const { data } = await supabase
@@ -25,38 +31,55 @@ export function useChat(webinarId, userName) {
         .order('sent_at', { ascending: true })
         .limit(100);
 
+      if (cancelled) return;
       setMessages(capChatMessages(data || [], CHAT_MESSAGE_CAP));
       setLoading(false);
     };
 
-    fetchMessages();
-  }, [webinarId]);
+    const connect = () => {
+      const channel = supabase
+        .channel(`chat:${webinarId}:${Date.now()}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'chat_messages',
+            filter: `webinar_id=eq.${webinarId}`,
+          },
+          (payload) => {
+            setMessages((prev) =>
+              capChatMessages([...prev, payload.new], CHAT_MESSAGE_CAP)
+            );
+          }
+        )
+        .subscribe((status) => {
+          if (cancelled) return;
 
-  // Subscribe to realtime
-  useEffect(() => {
-    if (!webinarId) return;
+          if (status === 'SUBSCRIBED') {
+            retryCount = 0;
+            fetchMessages();
+            return;
+          }
 
-    const channel = supabase
-      .channel(`chat:${webinarId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'chat_messages',
-          filter: `webinar_id=eq.${webinarId}`,
-        },
-        (payload) => {
-          setMessages((prev) =>
-            capChatMessages([...prev, payload.new], CHAT_MESSAGE_CAP)
-          );
-        }
-      )
-      .subscribe();
+          if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+            supabase.removeChannel(channel);
+            const delayMs = Math.min(1000 * 2 ** retryCount, 15000);
+            retryCount += 1;
+            reconnectTimeoutId = setTimeout(() => {
+              if (!cancelled) connect();
+            }, delayMs);
+          }
+        });
 
-    channelRef.current = channel;
+      channelRef.current = channel;
+    };
+
+    connect();
 
     return () => {
+      cancelled = true;
+      if (reconnectTimeoutId) clearTimeout(reconnectTimeoutId);
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
       }
