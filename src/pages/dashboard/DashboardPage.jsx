@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useWebinars } from '../../hooks/useWebinar';
+import { useOrgWebinarStats } from '../../hooks/useAnalytics';
 import { Video, Users, UserCheck, TrendingUp, Plus, ArrowRight, Calendar } from 'lucide-react';
 import { WEBINAR_STATUS } from '../../lib/constants';
 import { format } from 'date-fns';
@@ -12,6 +13,7 @@ export default function DashboardPage() {
   const { t, i18n } = useTranslation();
   const { profile } = useAuth();
   const { webinars, loading } = useWebinars();
+  const { rows: orgStats } = useOrgWebinarStats();
 
   const dateLocale = i18n.language === 'pt-BR' ? ptBR : enUS;
 
@@ -19,6 +21,11 @@ export default function DashboardPage() {
     (sum, w) => sum + (w.registrations?.[0]?.count || 0),
     0
   );
+
+  const totalAttendees = orgStats.reduce((sum, r) => sum + r.totalAttendees, 0);
+  const avgConversion = totalRegistrations
+    ? Math.round((totalAttendees / totalRegistrations) * 100)
+    : 0;
 
   const upcomingWebinars = webinars.filter(
     (w) => w.status === WEBINAR_STATUS.SCHEDULED
@@ -46,13 +53,13 @@ export default function DashboardPage() {
     },
     {
       label: t('dashboard.totalAttendees'),
-      value: '—',
+      value: totalAttendees,
       icon: UserCheck,
       color: 'var(--color-warning-500)',
     },
     {
       label: t('dashboard.avgConversion'),
-      value: '—',
+      value: `${avgConversion}%`,
       icon: TrendingUp,
       color: 'var(--color-error-500)',
     },
