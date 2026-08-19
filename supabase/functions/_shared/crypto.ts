@@ -7,9 +7,16 @@
 const IV_LENGTH = 12
 
 function getEncryptionKeyMaterial(): string {
-  return Deno.env.get("INTEGRATION_ENCRYPTION_KEY") ??
-    Deno.env.get("SUPABASE_JWT_SECRET") ??
-    "fallback-dev-key-change-me"
+  const key = Deno.env.get("INTEGRATION_ENCRYPTION_KEY") ??
+    Deno.env.get("SUPABASE_JWT_SECRET")
+
+  if (!key) {
+    throw new Error(
+      "INTEGRATION_ENCRYPTION_KEY (or SUPABASE_JWT_SECRET) must be set to encrypt/decrypt integration secrets",
+    )
+  }
+
+  return key
 }
 
 function deriveKey(
