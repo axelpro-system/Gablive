@@ -6,8 +6,8 @@ const SUPABASE_URL =
 /**
  * Build public webhook URL for a provider + org.
  */
-export function buildWebhookUrl(provider, _orgId) {
-  return `${SUPABASE_URL}/functions/v1/receive-integration-webhook/${provider}`;
+export function buildWebhookUrl(provider, orgId) {
+  return `${SUPABASE_URL}/functions/v1/purchase-webhook?provider=${provider}&org_id=${orgId}`;
 }
 
 /**
