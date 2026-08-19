@@ -75,6 +75,7 @@ export const AUDIENCE_MODE = {
   NONE: 'none',
   FIXED: 'fixed',
   DYNAMIC: 'dynamic',
+  REAL: 'real',
 };
 
 export const BLOCK_TYPES = {

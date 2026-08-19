@@ -578,6 +578,9 @@ export default function InteractionsEditor({ webinarId }) {
                   <button type="button" className={`type-option ${audience.mode === AUDIENCE_MODE.DYNAMIC ? 'selected' : ''}`} onClick={() => setAudience({...audience, mode: AUDIENCE_MODE.DYNAMIC})}>
                     <span className="type-option-label">Audiência dinâmica</span>
                   </button>
+                  <button type="button" className={`type-option ${audience.mode === AUDIENCE_MODE.REAL ? 'selected' : ''}`} onClick={() => setAudience({...audience, mode: AUDIENCE_MODE.REAL})}>
+                    <span className="type-option-label">Audiência real</span>
+                  </button>
                 </div>
 
                 {audience.mode === AUDIENCE_MODE.FIXED && (
