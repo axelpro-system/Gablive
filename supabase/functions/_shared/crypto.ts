@@ -72,3 +72,29 @@ export async function decryptSecret(encrypted: string): Promise<string> {
 
   return dec.decode(plainBuffer)
 }
+
+/**
+ * Encrypt a credentials object for storage in a JSONB column.
+ * Returns { enc: "base64(iv):base64(ciphertext)" }.
+ */
+export async function encryptSecretsObject(
+  secrets: Record<string, string>,
+): Promise<{ enc: string }> {
+  return { enc: await encryptSecret(JSON.stringify(secrets)) }
+}
+
+/**
+ * Decrypt a credentials object stored by encryptSecretsObject.
+ * Backward-compatible: if the stored JSONB is not in { enc } format
+ * (legacy plaintext row written before encryption was introduced),
+ * it is returned as-is — callers should re-save to upgrade it.
+ */
+export async function decryptSecretsObject(
+  stored: Record<string, unknown> | null | undefined,
+): Promise<Record<string, string>> {
+  if (!stored) return {}
+  if (typeof stored.enc === "string") {
+    return JSON.parse(await decryptSecret(stored.enc))
+  }
+  return stored as Record<string, string>
+}
