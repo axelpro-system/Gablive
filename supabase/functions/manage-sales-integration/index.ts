@@ -392,6 +392,32 @@ async function createMapping(
   return { mapping: data }
 }
 
+async function updateMapping(
+  supabase: ServiceClient,
+  orgId: string,
+  mappingId: string,
+  patch: Record<string, unknown>,
+) {
+  const allowed: Record<string, unknown> = {}
+  if (typeof patch.enabled === "boolean") allowed.enabled = patch.enabled
+  if (typeof patch.product_name === "string") allowed.product_name = patch.product_name
+  if (Array.isArray(patch.conversion_events)) allowed.conversion_events = patch.conversion_events
+
+  if (Object.keys(allowed).length === 0) return { error: "No valid fields to update" }
+  allowed.updated_at = new Date().toISOString()
+
+  const { data, error } = await supabase
+    .from("provider_product_mappings")
+    .update(allowed)
+    .eq("id", mappingId)
+    .eq("org_id", orgId)
+    .select("*")
+    .single()
+
+  if (error) return { error: error.message }
+  return { mapping: data }
+}
+
 async function deleteMapping(
   supabase: ServiceClient,
   orgId: string,
@@ -474,6 +500,14 @@ serve(async (req) => {
 
       case "create_mapping":
         return json(await createMapping(supabase, targetOrgId, body))
+
+      case "update_mapping":
+        return json(await updateMapping(
+          supabase,
+          targetOrgId,
+          String(body.mapping_id || ""),
+          (body.patch || {}) as Record<string, unknown>,
+        ))
 
       case "delete_mapping":
         return json(await deleteMapping(supabase, targetOrgId, String(body.mapping_id || "")))

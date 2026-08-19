@@ -85,9 +85,12 @@ export async function createProductMapping(mapping) {
  * Update a product mapping.
  */
 export async function updateProductMapping(id, patch) {
-  // Not yet implemented — return stub
-  console.warn('updateProductMapping not yet implemented');
-  return { id, ...patch };
+  const data = await callManageSalesIntegration({
+    action: 'update_mapping',
+    mapping_id: id,
+    patch,
+  });
+  return data?.mapping || data;
 }
 
 /**
