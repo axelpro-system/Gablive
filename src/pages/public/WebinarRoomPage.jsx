@@ -65,6 +65,7 @@ export default function WebinarRoomPage() {
   const [isMuted, setIsMuted] = useState(true);
   const [activeMobileTab, setActiveMobileTab] = useState('chat');
   const [chatInput, setChatInput] = useState('');
+  const [chatError, setChatError] = useState('');
   const [liked, setLiked] = useState(() => {
     const stored = localStorage.getItem(`webinar-like-${slug}`);
     return stored === 'true';
@@ -74,7 +75,7 @@ export default function WebinarRoomPage() {
   const chatEndRef = useRef(null);
 
   // Chat
-  const { messages: chatMessages, sendMessage } = useChat(webinar?.id, registration?.name);
+  const { messages: chatMessages, sendMessage } = useChat(webinar?.id, registration?.name, registration?.email);
   const { messages: simulatedMessages } = useSimulatedChat(webinar?.id, videoTime);
 
   const allMessages = [
@@ -119,7 +120,13 @@ export default function WebinarRoomPage() {
     if (!input) return;
     const sanitized = sanitizeInput(input);
     const result = await sendMessage(sanitized);
-    if (!result?.ok) return;
+    if (!result?.ok) {
+      if (result?.reason === 'banned') {
+        setChatError('Você não pode enviar mensagens nesta sala.');
+      }
+      return;
+    }
+    setChatError('');
     setChatInput('');
     if (webinar && registration) {
       trackEvent(webinar.id, registration.id, ANALYTICS_EVENTS.CHAT_MESSAGE);
@@ -470,6 +477,7 @@ export default function WebinarRoomPage() {
               )}
               <div ref={chatEndRef} />
             </div>
+            {chatError && <p className="room-chat-error">{chatError}</p>}
             {registration && (
               <form className="room-chat-input" onSubmit={handleSendChat}>
                 <input type="text" className="input" placeholder={t('chat.placeholder')}

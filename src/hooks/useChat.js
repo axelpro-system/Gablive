@@ -7,7 +7,7 @@ import {
   CHAT_SEND_MIN_INTERVAL_MS,
 } from '../lib/chatLimits';
 
-export function useChat(webinarId, userName) {
+export function useChat(webinarId, userName, userEmail) {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
   const channelRef = useRef(null);
@@ -104,15 +104,21 @@ export function useChat(webinarId, userName) {
       const { error } = await supabase.from('chat_messages').insert({
         webinar_id: webinarId,
         user_name: userName || 'Anônimo',
+        user_email: userEmail || null,
         message: message.trim(),
       });
 
-      if (error) throw error;
+      if (error) {
+        if (error.code === '42501' || /row-level security/i.test(error.message || '')) {
+          return { ok: false, reason: 'banned' };
+        }
+        throw error;
+      }
 
       lastSendAtMsRef.current = now;
       return { ok: true };
     },
-    [webinarId, userName]
+    [webinarId, userName, userEmail]
   );
 
   return {

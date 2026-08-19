@@ -4,13 +4,14 @@ import { useTranslation } from 'react-i18next';
 import { useSupabase } from '../../contexts/SupabaseContext';
 import { useOrg } from '../../contexts/OrgContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { ArrowLeft, Settings, Layout, MessageSquare, Mail, BarChart3, ExternalLink, LogIn, Radio, Calendar, Trash2 } from 'lucide-react';
+import { ArrowLeft, Settings, Layout, MessageSquare, Mail, BarChart3, ExternalLink, LogIn, Radio, Calendar, Trash2, ShieldAlert } from 'lucide-react';
 import ConfigEditor from '../../components/editor/ConfigEditor';
 import RegistrationEditor from '../../components/editor/RegistrationEditor';
 import InteractionsEditor from '../../components/editor/InteractionsEditor';
 import EmailsEditor from '../../components/editor/EmailsEditor';
 import AnalyticsDashboard from '../../components/editor/AnalyticsDashboard';
 import LoginCustomizationEditor from '../../components/editor/LoginCustomizationEditor';
+import ChatModerationPanel from '../../components/editor/ChatModerationPanel';
 import WebinarStatusControl from '../../components/editor/WebinarStatusControl';
 import DeleteWebinarDialog from '../../components/webinars/DeleteWebinarDialog';
 import { WEBINAR_STATUS } from '../../lib/constants';
@@ -36,7 +37,7 @@ export default function EditWebinarPage() {
   const [loading, setLoading] = useState(true);
   const requestedTab = searchParams.get('tab');
   const [activeTab, setActiveTab] = useState(
-    ['config', 'registration', 'login', 'interactions', 'emails', 'analytics'].includes(requestedTab)
+    ['config', 'registration', 'login', 'interactions', 'moderation', 'emails', 'analytics'].includes(requestedTab)
       ? requestedTab
       : 'config'
   );
@@ -76,6 +77,7 @@ export default function EditWebinarPage() {
     { id: 'registration', label: 'Página de Registro', icon: Layout },
     { id: 'login', label: 'Tela de Entrada', icon: LogIn },
     { id: 'interactions', label: 'Interações (Chat, Oferta, Vendas)', icon: MessageSquare },
+    { id: 'moderation', label: 'Moderação do Chat', icon: ShieldAlert },
     { id: 'emails', label: 'E-mails', icon: Mail },
     { id: 'analytics', label: 'Analytics', icon: BarChart3 },
   ];
@@ -167,6 +169,9 @@ export default function EditWebinarPage() {
           )}
           {activeTab === 'interactions' && (
             <InteractionsEditor webinarId={webinar.id} />
+          )}
+          {activeTab === 'moderation' && (
+            <ChatModerationPanel webinarId={webinar.id} />
           )}
           {activeTab === 'emails' && (
             <EmailsEditor webinarId={webinar.id} />
