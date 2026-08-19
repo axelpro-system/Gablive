@@ -23,3 +23,18 @@ export function isValidEmail(email) {
   const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return re.test(String(email).toLowerCase());
 }
+
+/**
+ * Validates that a phone number contains only digits/formatting characters
+ * and has a plausible number of digits (8-15, covers local and
+ * international formats with country code).
+ * @param {string} phone
+ * @returns {boolean}
+ */
+export function isValidPhone(phone) {
+  const value = String(phone || '').trim();
+  if (!value) return false;
+  if (!/^[\d\s()+-]+$/.test(value)) return false;
+  const digitCount = (value.match(/\d/g) || []).length;
+  return digitCount >= 8 && digitCount <= 15;
+}

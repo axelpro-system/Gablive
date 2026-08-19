@@ -8,7 +8,7 @@ import { useTrackEvent } from '../../hooks/useAnalytics';
 import { BLOCK_TYPES, ANALYTICS_EVENTS } from '../../lib/constants';
 import { useSeo } from '../../hooks/useSeo';
 import { useRegistrationSubmit, requestAccessEmail } from '../../hooks/useRegistrationSubmit';
-import { sanitizeInput, isValidEmail } from '../../lib/sanitize';
+import { sanitizeInput, isValidEmail, isValidPhone } from '../../lib/sanitize';
 import { CheckCircle, Clock, Quote, ArrowRight, ShieldCheck, CalendarDays, X, Users } from 'lucide-react';
 import './RegistrationPage.css';
 
@@ -138,6 +138,11 @@ export default function RegistrationPage() {
 
     if (!isValidEmail(cleanEmail)) {
       setError('Por favor, informe um endereço de e-mail válido.');
+      return;
+    }
+
+    if (formData.phone.trim() && !isValidPhone(formData.phone)) {
+      setError('Por favor, informe um número de telefone válido.');
       return;
     }
 
