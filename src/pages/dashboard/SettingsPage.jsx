@@ -11,6 +11,8 @@ export default function SettingsPage() {
 
   // Form state
   const [orgName, setOrgName] = useState('');
+  const [geminiApiKey, setGeminiApiKey] = useState('');
+  const [geminiKeyConfigured, setGeminiKeyConfigured] = useState(false);
   const [displayName, setDisplayName] = useState('');
   const [locale, setLocale] = useState('pt-BR');
 
@@ -60,6 +62,9 @@ export default function SettingsPage() {
         if (error) throw error;
         if (data) {
           setOrgName(data.name);
+          setGeminiKeyConfigured(
+            Boolean(data.settings?.gemini_api_key_encrypted || data.settings?.gemini_api_key)
+          );
           setOriginal((prev) => ({ ...prev, orgName: data.name }));
         }
       } catch {
@@ -82,9 +87,11 @@ export default function SettingsPage() {
     }
   }, [profile]);
 
-  // Detecta se há mudanças não salvas
+  // Detecta se há mudanças não salvas (a chave Gemini nunca é pré-carregada —
+  // qualquer texto digitado nela já conta como mudança)
   const isDirty =
     orgName !== original.orgName ||
+    geminiApiKey.trim() !== '' ||
     displayName !== original.displayName ||
     locale !== original.locale;
 
@@ -110,6 +117,10 @@ export default function SettingsPage() {
   const handleOrgNameChange = (e) => {
     setOrgName(e.target.value);
     if (errors.orgName) setErrors((prev) => ({ ...prev, orgName: undefined }));
+  };
+
+  const handleGeminiApiKeyChange = (e) => {
+    setGeminiApiKey(e.target.value);
   };
 
   const handleDisplayNameChange = (e) => {
@@ -158,8 +169,26 @@ export default function SettingsPage() {
       const failed = results.find((r) => r.error);
       if (failed) throw failed.error;
 
+      // A chave do Gemini é criptografada no servidor — nunca gravada em
+      // texto puro pelo client. Só chama a function se o usuário digitou algo.
+      if (geminiApiKey.trim()) {
+        const { data: { session } } = await supabase.auth.getSession();
+        const { data: keyResult, error: keyError } = await supabase.functions.invoke(
+          'save-org-gemini-key',
+          {
+            body: { api_key: geminiApiKey.trim() },
+            headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : undefined,
+          }
+        );
+        if (keyError || keyResult?.error) {
+          throw new Error(keyResult?.error || keyError.message);
+        }
+        setGeminiKeyConfigured(true);
+      }
+
       // Atualiza valores originais após salvar
       setOriginal({ orgName: orgName.trim(), displayName: displayName.trim(), locale });
+      setGeminiApiKey('');
       setMessage({ type: 'success', text: 'Configurações salvas com sucesso!' });
     } catch (err) {
       const isNetwork = err?.message?.includes('fetch') || err?.code === 'PGRST301';
@@ -233,6 +262,29 @@ export default function SettingsPage() {
                   {errors.orgName}
                 </p>
               )}
+            </div>
+          )}
+
+          {!loading && (
+            <div className="input-group">
+              <label className="input-label" htmlFor="settings-gemini-key">
+                Chave da API do Gemini (AI Agents)
+                {geminiKeyConfigured && <span className="badge badge-success" style={{ marginLeft: 8 }}>Configurada</span>}
+              </label>
+              <input
+                id="settings-gemini-key"
+                type="password"
+                className="input"
+                placeholder={geminiKeyConfigured ? 'Digite uma nova chave para substituir a atual' : 'Ex: AIzaSyB...'}
+                value={geminiApiKey}
+                onChange={handleGeminiApiKeyChange}
+                maxLength={200}
+                autoComplete="off"
+              />
+              <p className="input-hint">
+                Necessária para utilizar as funcionalidades de Agentes de IA nos webinários.
+                {geminiKeyConfigured && ' A chave é armazenada de forma criptografada e não é exibida novamente por segurança.'}
+              </p>
             </div>
           )}
         </div>

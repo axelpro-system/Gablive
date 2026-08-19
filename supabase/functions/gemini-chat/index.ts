@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.1"
+import { decryptSecret } from "../_shared/crypto.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -72,7 +73,11 @@ serve(async (req) => {
     }
 
     // Construct the payload for Gemini
-    const geminiApiKey = org?.settings?.gemini_api_key || Deno.env.get('GEMINI_API_KEY')
+    const encryptedKey = org?.settings?.gemini_api_key_encrypted
+    const legacyPlaintextKey = org?.settings?.gemini_api_key // pre-encryption orgs, until re-saved
+    const geminiApiKey = encryptedKey
+      ? await decryptSecret(encryptedKey)
+      : legacyPlaintextKey || Deno.env.get('GEMINI_API_KEY')
     if (!geminiApiKey) {
       return new Response(JSON.stringify({ error: 'A chave da API do Gemini não está configurada para esta organização.' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

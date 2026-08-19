@@ -407,6 +407,10 @@ verify_jwt = false
 [functions.manage-sales-integration]
 verify_jwt = false
 
+# Auth verified inside the function (Bearer token -> auth.getUser)
+[functions.save-org-gemini-key]
+verify_jwt = false
+
 [functions.ai-agent-run]
 verify_jwt = false
 
