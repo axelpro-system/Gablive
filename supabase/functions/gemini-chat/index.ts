@@ -7,6 +7,11 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Sliding-window cap: at most this many Gemini calls per webinar per window.
+const RATE_LIMIT_MAX_INVOCATIONS = 5
+const RATE_LIMIT_WINDOW_MS = 10_000
+const GEMINI_FETCH_TIMEOUT_MS = 10_000
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -75,6 +80,24 @@ serve(async (req) => {
       })
     }
 
+    // Server-side rate limit — protects the operator from unbounded Gemini
+    // cost when many participants chat at once.
+    const windowStart = new Date(Date.now() - RATE_LIMIT_WINDOW_MS).toISOString()
+    const { count: recentInvocations } = await supabaseAdmin
+      .from('gemini_chat_invocations')
+      .select('id', { count: 'exact', head: true })
+      .eq('webinar_id', webinar_id)
+      .gte('invoked_at', windowStart)
+
+    if ((recentInvocations || 0) >= RATE_LIMIT_MAX_INVOCATIONS) {
+      return new Response(JSON.stringify({ success: true, skipped: true, reason: 'rate_limited' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      })
+    }
+
+    await supabaseAdmin.from('gemini_chat_invocations').insert({ webinar_id })
+
     const customPrompt = webinar.ai_agent_prompt || 'You are a friendly, knowledgeable host assistant for this webinar.'
 
     // The agent now sees every chat message, not just ones that @-mention it, so it must
@@ -110,21 +133,34 @@ You are monitoring the live chat of a webinar. You will be shown the most recent
     // Call Gemini API — "latest" alias always resolves to the current stable Flash model
     // (Gemini 3 generation as of writing) without pinning a version string that may be retired.
     const geminiModel = 'gemini-flash-latest'
-    const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${geminiApiKey}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        system_instruction: {
-          parts: [{ text: systemPrompt }]
+    const timeoutController = new AbortController()
+    const timeoutId = setTimeout(() => timeoutController.abort(), GEMINI_FETCH_TIMEOUT_MS)
+    let geminiResponse: Response
+    try {
+      geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${geminiApiKey}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
         },
-        contents: contents,
-        generationConfig: {
-          temperature: 0.7,
-        }
+        body: JSON.stringify({
+          system_instruction: {
+            parts: [{ text: systemPrompt }]
+          },
+          contents: contents,
+          generationConfig: {
+            temperature: 0.7,
+          }
+        }),
+        signal: timeoutController.signal,
       })
-    })
+    } catch (fetchErr) {
+      if ((fetchErr as Error).name === 'AbortError') {
+        throw new Error('Gemini API timed out')
+      }
+      throw fetchErr
+    } finally {
+      clearTimeout(timeoutId)
+    }
 
     if (!geminiResponse.ok) {
       const errText = await geminiResponse.text()
