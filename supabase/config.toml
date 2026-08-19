@@ -404,14 +404,6 @@ verify_jwt = true
 [functions.purchase-webhook]
 verify_jwt = false
 
-# Public webhook receiver — auth via provider secret, not JWT
-[functions.receive-integration-webhook]
-verify_jwt = false
-
-# Org admin save/test credentials — auth verified inside the function via Service Role
-[functions.save-integration-config]
-verify_jwt = false
-
 [functions.manage-sales-integration]
 verify_jwt = false
 
@@ -444,3 +436,14 @@ s3_secret_key = "env(S3_SECRET_KEY)"
 # declarative_schema_path = "./database"
 # JSON string passed through to pg-delta SQL formatting.
 # format_options = "{\"keywordCase\":\"upper\",\"indent\":2,\"maxWidth\":80,\"commaStyle\":\"trailing\"}"
+
+[functions.gemini-chat]
+enabled = true
+verify_jwt = false
+import_map = "./functions/gemini-chat/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/gemini-chat/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/gemini-chat/*.html" ]
