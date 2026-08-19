@@ -262,7 +262,8 @@
     "recoverAccessEmailLabel": "Your registration email",
     "recoverAccessSubmit": "Send access link",
     "recoverAccessSuccess": "If this email is registered, we've sent the access link.",
-    "recoverAccessCancel": "Cancel"
+    "recoverAccessCancel": "Cancel",
+    "waitlistedMessage": "Confirmed spots are full — you're on the waitlist and we'll notify you if a spot opens up."
   },
   "room": {
     "title": "Webinar room",

@@ -27,6 +27,7 @@ export default function CreateWebinarPage() {
     use_wait_room: false,
     recurrence_type: RECURRENCE_TYPE.NONE,
     session_duration_minutes: 60,
+    capacity: '',
   });
 
   const [error, setError] = useState('');
@@ -65,6 +66,7 @@ export default function CreateWebinarPage() {
         video_platform: detectVideoPlatform(videoUrl),
         scheduled_at: scheduledAtIso,
         status: form.is_just_in_time || scheduledAtIso ? 'scheduled' : 'draft',
+        capacity: form.capacity ? parseInt(form.capacity, 10) : null,
       });
       navigate(`/webinars/${webinar.id}?tab=registration`);
     } catch (err) {
@@ -285,6 +287,21 @@ export default function CreateWebinarPage() {
               </div>
             </div>
           )}
+
+          <div className="input-group">
+            <label className="input-label" htmlFor="cw-capacity">
+              Capacidade máxima (opcional)
+            </label>
+            <input
+              id="cw-capacity"
+              type="number"
+              className="input"
+              min={1}
+              placeholder="Deixe em branco para ilimitado"
+              value={form.capacity}
+              onChange={(e) => updateField('capacity', e.target.value)}
+            />
+          </div>
 
           <div className="input-group">
             <label className="input-label toggle-label">

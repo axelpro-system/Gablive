@@ -33,6 +33,7 @@ export default function RegistrationPage() {
   const [formData, setFormData] = useState({ name: '', email: '', phone: '' });
   const [emailValid, setEmailValid] = useState(null);
   const [success, setSuccess] = useState(false);
+  const [waitlisted, setWaitlisted] = useState(false);
   const [showExitIntent, setShowExitIntent] = useState(false);
   const [hasShownExitIntent, setHasShownExitIntent] = useState(false);
   const [loadError, setLoadError] = useState(false);
@@ -156,6 +157,7 @@ export default function RegistrationPage() {
 
     trackEvent(webinar.id, result.reg.id, ANALYTICS_EVENTS.REGISTRATION);
     localStorage.setItem(`webinar-reg-${webinar.id}`, result.reg.id);
+    setWaitlisted(Boolean(result.reg.waitlisted));
 
     const accessPath = webinar.use_wait_room
       ? `/wait/${webinar.slug}?reg=${result.reg.id}`
@@ -213,6 +215,7 @@ export default function RegistrationPage() {
           <CheckCircle size={64} className="reg-success-icon" />
           <h1>{t('registration.successTitle')}</h1>
           <p>{t('registration.successMessage')}</p>
+          {waitlisted && <p className="reg-waitlist-notice">{t('registration.waitlistedMessage')}</p>}
           <button
             className="btn btn-primary btn-lg"
             onClick={() => {

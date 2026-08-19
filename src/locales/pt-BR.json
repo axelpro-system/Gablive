@@ -262,7 +262,8 @@
     "recoverAccessEmailLabel": "Seu e-mail de inscrição",
     "recoverAccessSubmit": "Enviar link de acesso",
     "recoverAccessSuccess": "Se este e-mail estiver inscrito, enviamos o link de acesso.",
-    "recoverAccessCancel": "Cancelar"
+    "recoverAccessCancel": "Cancelar",
+    "waitlistedMessage": "As vagas confirmadas se esgotaram — você está na lista de espera e será avisado se surgir uma vaga."
   },
   "room": {
     "title": "Sala do webinário",
