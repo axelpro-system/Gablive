@@ -8,6 +8,9 @@ import { useTrackEvent } from '../../hooks/useAnalytics';
 import { BLOCK_TYPES, ANALYTICS_EVENTS } from '../../lib/constants';
 import { useSeo } from '../../hooks/useSeo';
 import { useRegistrationSubmit, requestAccessEmail } from '../../hooks/useRegistrationSubmit';
+import { needsJitWait } from '../../lib/jitSession';
+import { resolvePublicRegistrationPage, canAccessLiveSession } from '../../lib/publicRegistration';
+import { buildGoogleCalendarUrl, formatConfirmedSignups } from '../../lib/sessionCalendar';
 import { sanitizeInput, isValidEmail, isValidPhone } from '../../lib/sanitize';
 import { CheckCircle, Clock, Quote, ArrowRight, ShieldCheck, CalendarDays, X, Users } from 'lucide-react';
 import './RegistrationPage.css';
@@ -34,6 +37,7 @@ export default function RegistrationPage() {
   const [emailValid, setEmailValid] = useState(null);
   const [success, setSuccess] = useState(false);
   const [waitlisted, setWaitlisted] = useState(false);
+  const [sessionRegistration, setSessionRegistration] = useState(null);
   const [showExitIntent, setShowExitIntent] = useState(false);
   const [hasShownExitIntent, setHasShownExitIntent] = useState(false);
   const [loadError, setLoadError] = useState(false);
@@ -78,14 +82,17 @@ export default function RegistrationPage() {
 
     if (webinarData) {
       setWebinar(webinarData);
-      const regPage = webinarData.registration_pages?.[0];
-      if (regPage) {
-        setPage({
-          ...regPage,
-          blocks: typeof regPage.blocks === 'string' ? JSON.parse(regPage.blocks) : regPage.blocks,
-          theme: typeof regPage.theme === 'string' ? JSON.parse(regPage.theme) : regPage.theme,
-        });
+      let bundle = webinarData;
+      if (webinarData.registration_page_template_id && !webinarData.registration_page_template) {
+        const { data: template } = await supabase
+          .from('page_templates')
+          .select('id, name, type, subtype, blocks, theme')
+          .eq('id', webinarData.registration_page_template_id)
+          .maybeSingle();
+        if (template) bundle = { ...webinarData, registration_page_template: template };
       }
+      const resolved = resolvePublicRegistrationPage(bundle);
+      if (resolved) setPage(resolved);
       setLoginConfig(webinarData.login_customizations || null);
       trackEvent(webinarData.id, null, ANALYTICS_EVENTS.PAGE_VIEW);
     }
@@ -168,13 +175,21 @@ export default function RegistrationPage() {
 
     trackEvent(webinar.id, result.reg.id, ANALYTICS_EVENTS.REGISTRATION);
     localStorage.setItem(`webinar-reg-${webinar.id}`, result.reg.id);
-    setWaitlisted(Boolean(result.reg.waitlisted));
+    const isWaitlisted = Boolean(result.reg.waitlisted);
+    setWaitlisted(isWaitlisted);
+    setSessionRegistration(result.reg);
 
-    const accessPath = webinar.use_wait_room
+    if (isWaitlisted || !canAccessLiveSession(result.reg)) {
+      setSuccess(true);
+      return;
+    }
+
+    const goToWait = webinar.use_wait_room || needsJitWait(webinar, result.reg.session_start_at);
+    const accessPath = goToWait
       ? `/wait/${webinar.slug}?reg=${result.reg.id}`
       : `/room/${webinar.slug}?reg=${result.reg.id}`;
 
-    if (webinar.use_wait_room) {
+    if (goToWait) {
       navigate(accessPath);
       return;
     }
@@ -212,13 +227,7 @@ export default function RegistrationPage() {
   }
 
   if (success) {
-    const generateGoogleCalendarUrl = () => {
-      const start = new Date(webinar.scheduled_at);
-      const end = new Date(start.getTime() + 2 * 60 * 60 * 1000); // 2 hours
-      const formatTime = (d) => d.toISOString().replace(/-|:|\.\d\d\d/g, '');
-      const details = encodeURIComponent(webinar.description || 'Webinário exclusivo.');
-      return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(webinar.title)}&dates=${formatTime(start)}/${formatTime(end)}&details=${details}`;
-    };
+    const calendarUrl = !waitlisted ? buildGoogleCalendarUrl(webinar, sessionRegistration) : null;
 
     return (
       <div className="reg-success-page">
@@ -227,20 +236,22 @@ export default function RegistrationPage() {
           <h1>{t('registration.successTitle')}</h1>
           <p>{t('registration.successMessage')}</p>
           {waitlisted && <p className="reg-waitlist-notice">{t('registration.waitlistedMessage')}</p>}
-          <button
-            className="btn btn-primary btn-lg"
-            onClick={() => {
-              const regId = localStorage.getItem(`webinar-reg-${webinar.id}`);
-              navigate(regId ? `/room/${webinar.slug}?reg=${regId}` : `/room/${webinar.slug}`);
-            }}
-          >
-            {t('room.title')}
-            <ArrowRight size={18} />
-          </button>
+          {!waitlisted && (
+            <button
+              className="btn btn-primary btn-lg"
+              onClick={() => {
+                const regId = localStorage.getItem(`webinar-reg-${webinar.id}`);
+                navigate(regId ? `/room/${webinar.slug}?reg=${regId}` : `/room/${webinar.slug}`);
+              }}
+            >
+              {loginConfig?.button_text || t('room.title')}
+              <ArrowRight size={18} />
+            </button>
+          )}
 
-          {webinar.scheduled_at && (
+          {calendarUrl && (
             <div className="reg-calendar-links" style={{ marginTop: '24px' }}>
-              <a href={generateGoogleCalendarUrl()} target="_blank" rel="noopener noreferrer" className="btn btn-secondary btn-sm">
+              <a href={calendarUrl} target="_blank" rel="noopener noreferrer" className="btn btn-secondary btn-sm">
                 <CalendarDays size={16} />
                 Adicionar ao Google Agenda
               </a>
@@ -264,6 +275,7 @@ export default function RegistrationPage() {
     '--reg-primary': usesLegacyTheme ? '#E31C23' : theme.primaryColor,
     '--reg-bg': usesLegacyTheme ? '#0F0F10' : theme.backgroundColor,
     '--reg-text': usesLegacyTheme ? '#F4F4F5' : theme.textColor,
+    '--reg-progress': loginConfig?.progress_bar_color || (usesLegacyTheme ? '#E31C23' : theme.primaryColor),
   };
 
   const renderBlock = (block, index) => {
@@ -430,16 +442,18 @@ export default function RegistrationPage() {
                     <span className="spinner spinner-sm" />
                   ) : (
                     <>
-                      {block.data?.buttonText || t('registration.registerButton')}
+                      {block.data?.buttonText || loginConfig?.button_text || t('registration.registerButton')}
                       <ArrowRight size={20} />
                     </>
                   )}
                 </button>
               </form>
-              <div className="reg-form-social-proof">
-                <Users size={16} />
-                <span>Mais de <strong>2.500 pessoas</strong> já garantiram a vaga.</span>
-              </div>
+              {formatConfirmedSignups(webinar.confirmed_registration_count) && (
+                <div className="reg-form-social-proof">
+                  <Users size={16} />
+                  <span>{formatConfirmedSignups(webinar.confirmed_registration_count)}</span>
+                </div>
+              )}
               <p className="reg-form-trust">
                 <ShieldCheck size={15} />
                 Seus dados estão seguros. Não enviamos spam.
@@ -504,6 +518,11 @@ export default function RegistrationPage() {
         />
         <span>Evento online e gratuito</span>
       </header>
+      {loginConfig?.show_progress_bar !== false && (
+        <div className="reg-progress" aria-hidden="true">
+          <div className="reg-progress-bar" />
+        </div>
+      )}
       <main>
         <div className="container">
           {/* Two-column row: hero + countdown (left) | form (right) */}

@@ -9,6 +9,22 @@
   padding-bottom: calc(var(--space-6) + env(safe-area-inset-bottom, 0px));
 }
 
+.wait-room-page--themed {
+  background: var(--wait-bg, var(--gablive-ink));
+  color: var(--wait-text, var(--color-text-inverse));
+}
+
+.wait-room-subtitle {
+  font-size: var(--text-sm);
+  opacity: 0.8;
+  max-width: 36ch;
+}
+
+.wait-room-audience {
+  font-size: var(--text-sm);
+  opacity: 0.85;
+}
+
 .wait-loading,
 .wait-error {
   min-height: 100vh;

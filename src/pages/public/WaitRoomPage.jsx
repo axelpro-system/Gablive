@@ -6,6 +6,9 @@ import { useCountdown } from '../../hooks/useCountdown';
 import { useSeo } from '../../hooks/useSeo';
 import { Clock, Users } from 'lucide-react';
 import { shouldLeaveWaitRoom, waitRoomTarget } from '../../lib/countdown';
+import { canAccessLiveSession } from '../../lib/publicRegistration';
+import { useSimulatedAudience } from '../../hooks/useSimulatedAudience';
+import { AUDIENCE_MODE } from '../../lib/constants';
 import './WaitRoomPage.css';
 
 export default function WaitRoomPage() {
@@ -16,6 +19,7 @@ export default function WaitRoomPage() {
   const regParam = searchParams.get('reg');
 
   const [webinar, setWebinar] = useState(null);
+  const [waitTemplate, setWaitTemplate] = useState(null);
   const [registration, setRegistration] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
@@ -40,6 +44,18 @@ export default function WaitRoomPage() {
 
     if (data) {
       setWebinar(data);
+      if (data.wait_page_template) {
+        setWaitTemplate(data.wait_page_template);
+      } else if (data.wait_page_template_id) {
+        const { data: template } = await supabase
+          .from('page_templates')
+          .select('id, name, type, subtype, blocks, theme')
+          .eq('id', data.wait_page_template_id)
+          .maybeSingle();
+        if (template) setWaitTemplate(template);
+      } else {
+        setWaitTemplate(null);
+      }
       // Token de acesso: ?reg=<id> na URL (link de e-mail, cross-device),
       // com fallback pro localStorage (mesmo aparelho). Persiste o da URL.
       if (regParam) localStorage.setItem(`webinar-reg-${data.id}`, regParam);
@@ -64,8 +80,10 @@ export default function WaitRoomPage() {
 
   const target = waitRoomTarget(webinar, registration);
   const countdown = useCountdown(target);
+  const { audienceCount } = useSimulatedAudience(webinar);
 
   useEffect(() => {
+    if (!canAccessLiveSession(registration)) return;
     if (!shouldLeaveWaitRoom({ webinar, registration })) return;
     navigate(`/room/${webinar.slug}`, { replace: true });
   }, [countdown.isExpired, webinar, registration, navigate]);
@@ -99,16 +117,48 @@ export default function WaitRoomPage() {
     );
   }
 
+  if (registration && !canAccessLiveSession(registration)) {
+    return (
+      <div className="wait-room-page">
+        <div className="wait-room-card">
+          <h1>{webinar.title}</h1>
+          <p>{t('registration.waitlistedMessage')}</p>
+        </div>
+      </div>
+    );
+  }
+
+  const hero = (waitTemplate?.blocks || []).find((block) => block.type === 'hero');
+  const theme = waitTemplate?.theme || {};
+  const customStyle = {
+    '--wait-bg': theme.backgroundColor || '',
+    '--wait-text': theme.textColor || '',
+    '--wait-primary': theme.primaryColor || '',
+  };
+
   return (
-    <div className="wait-room-page">
+    <div className={`wait-room-page${waitTemplate ? ' wait-room-page--themed' : ''}`} style={customStyle}>
       <div className="wait-room-card">
         <span className="wait-room-badge">
           <Users size={14} />
           Sala de espera
         </span>
-        <h1>{webinar.title}</h1>
+        {webinar.audience_configs?.mode && webinar.audience_configs.mode !== AUDIENCE_MODE.NONE && (
+          <p className="wait-room-audience">{audienceCount} assistindo</p>
+        )}
+        <h1>{hero?.data?.title || webinar.title}</h1>
+        {hero?.data?.subtitle && <p className="wait-room-subtitle">{hero.data.subtitle}</p>}
         <p>{t('registration.startsIn')}</p>
         <div className="wait-countdown">
+          {countdown.days > 0 && (
+            <>
+              <div className="wait-countdown-unit">
+                <span className="wait-countdown-value">{countdown.days}</span>
+                <span className="wait-countdown-label">{t('registration.days')}</span>
+              </div>
+              <span className="wait-countdown-separator">:</span>
+            </>
+          )}
           <div className="wait-countdown-unit">
             <span className="wait-countdown-value">{countdown.hours}</span>
             <span className="wait-countdown-label">{t('registration.hours')}</span>

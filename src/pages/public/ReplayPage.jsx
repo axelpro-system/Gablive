@@ -1,19 +1,24 @@
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../../lib/supabase';
 import { useCountdownSeconds } from '../../hooks/useCountdown';
 import { buildVideoEmbedUrl } from '../../lib/liveRoomState';
+import { getReplayExpiresAt, isReplayAvailable } from '../../lib/sessionCalendar';
+import { canAccessLiveSession } from '../../lib/publicRegistration';
 import CinemaScreenVideo from '../../components/video/CinemaScreenVideo';
 import { Clock, AlertTriangle, PlayCircle } from 'lucide-react';
-import { differenceInSeconds, addHours, isPast } from 'date-fns';
+import { differenceInSeconds } from 'date-fns';
 import './ReplayPage.css';
 
 export default function ReplayPage() {
   const { slug } = useParams();
   const { t } = useTranslation();
+  const [searchParams] = useSearchParams();
+  const regParam = searchParams.get('reg');
 
   const [webinar, setWebinar] = useState(null);
+  const [registration, setRegistration] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [expired, setExpired] = useState(false);
@@ -35,16 +40,20 @@ export default function ReplayPage() {
 
     if (data) {
       setWebinar(data);
+      if (regParam) localStorage.setItem(`webinar-reg-${data.id}`, regParam);
+      const regId = regParam || localStorage.getItem(`webinar-reg-${data.id}`);
+      let reg = null;
+      if (regId) {
+        const { data: regRows } = await supabase.rpc('get_registration_by_id', { p_id: regId });
+        reg = Array.isArray(regRows) ? regRows[0] : regRows;
+        if (reg) setRegistration(reg);
+      }
 
-      if (!data.replay_enabled) {
+      if (!isReplayAvailable(data, reg) || (reg && !canAccessLiveSession(reg))) {
         setExpired(true);
-      } else if (data.replay_expires_hours && data.scheduled_at) {
-        const expiresAt = addHours(new Date(data.scheduled_at), data.replay_expires_hours);
-        if (isPast(expiresAt)) {
-          setExpired(true);
-        } else {
-          setRemainingSeconds(differenceInSeconds(expiresAt, new Date()));
-        }
+      } else {
+        const expiresAt = getReplayExpiresAt(data, reg);
+        setRemainingSeconds(expiresAt ? Math.max(0, differenceInSeconds(expiresAt, new Date())) : 0);
       }
     }
     setLoading(false);
@@ -52,7 +61,7 @@ export default function ReplayPage() {
 
   useEffect(() => {
     loadWebinar();
-  }, [slug]);
+  }, [slug, regParam]);
 
   const countdown = useCountdownSeconds(remainingSeconds);
 
@@ -88,6 +97,15 @@ export default function ReplayPage() {
       <div className="replay-error">
         <h2>{t('registration.notFoundTitle')}</h2>
         <p>{t('registration.notFoundMessage')}</p>
+      </div>
+    );
+  }
+
+  if (registration && !canAccessLiveSession(registration)) {
+    return (
+      <div className="replay-error">
+        <h2>{webinar.title}</h2>
+        <p>{t('registration.waitlistedMessage')}</p>
       </div>
     );
   }

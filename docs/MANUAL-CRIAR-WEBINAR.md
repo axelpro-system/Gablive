@@ -64,16 +64,17 @@ Todos os leads assistem ao vídeo na mesma data e na mesma hora.
 
 ### 4.2 Webinar JIT
 
-Use este modo para um evento sempre disponível.
+Use este modo para um evento evergreen.
 
 1. Clique em **Just in Time**.
 2. Escolha a recorrência no campo **Recorrência das sessões**.
-   - Escolha **Sempre disponível** para iniciar o vídeo assim que o lead entra.
-   - Escolha **Sessões diárias** para sessões todo dia.
-   - Escolha **Sessões semanais** para sessões toda semana.
-3. Digite a duração da sessão, em minutos, no campo **Duração da sessão**.
+   - Escolha **Sempre disponível** para iniciar a sessão na hora em que o lead entra.
+   - Escolha **Sessões diárias** para um horário todo dia. Preencha **Horário das sessões**.
+   - Escolha **Sessões semanais** para o mesmo dia da semana. Preencha **Horário das sessões**.
+3. Digite a duração da sessão, em minutos, no campo **Duração da sessão**. Depois desse tempo a sessão termina.
+4. Se quiser limitar vagas, preencha **Capacidade máxima**. Quem se inscrever depois entra na lista de espera e não acessa a sala.
 
-Cada lead assiste ao vídeo desde o início, no momento em que entra.
+No modo sempre disponível, cada lead começa do início na hora em que entra. Nas sessões diárias ou semanais, o lead espera o próximo horário e assiste do início. Se o horário da vez já começou, o sistema marca o próximo.
 
 ---
 
@@ -139,7 +140,22 @@ O sistema mostra a notificação de venda ao lead no tempo configurado.
 
 ---
 
-## 9. Como configurar a audiência
+## 9. Como apagar interações em massa
+
+Use a seleção em massa para apagar várias mensagens de chat, ofertas ou vendas de uma vez.
+
+1. Abra o webinar no painel.
+2. Clique na aba **Interações**.
+3. Clique em **Chat Simulado**, **Ofertas (CTAs)** ou **Vendas**.
+4. Marque a caixa de cada item que deseja apagar. Ou marque **Selecionar todos**.
+5. Clique em **Apagar selecionados**.
+6. Confirme a exclusão.
+
+O sistema apaga só os itens marcados daquela lista. O sistema não apaga enquetes nem audiência neste fluxo. Cancele a confirmação para manter os itens.
+
+---
+
+## 10. Como configurar a audiência
 
 A audiência é o contador de pessoas na sala.
 
@@ -154,7 +170,7 @@ A audiência é o contador de pessoas na sala.
 
 ---
 
-## 10. Como publicar o link do webinar
+## 11. Como publicar o link do webinar
 
 1. Abra a lista de webinars no painel.
 2. Encontre o webinar na lista.
@@ -166,7 +182,7 @@ O link leva o lead à tela de entrada do webinar.
 
 ---
 
-## 11. Como checar as métricas
+## 12. Como checar as métricas
 
 1. Abra o webinar no painel.
 2. Clique na aba **Analytics**.
@@ -181,14 +197,16 @@ O link leva o lead à tela de entrada do webinar.
 
 ---
 
-## 12. Erros comuns e correções
+## 13. Erros comuns e correções
 
 | Erro | Correção |
 |------|----------|
 | O vídeo não toca na sala. | Confirme o link do vídeo. Use um link do YouTube ou do Vimeo. |
 | O lead não recebe a oferta. | Confirme o tempo de início do pitch. Confirme o link de checkout. |
+| A exclusão em massa apagou a lista errada. | Confirme a aba ativa. A seleção vale só para Chat, Oferta ou Vendas daquela aba. |
 | O contador de audiência não aparece. | Confirme o modo de audiência. O modo **Não exibir** esconde o contador. |
-| A sala de espera não aparece. | Confirme a caixa **Usar sala de espera antes do início**. |
+| A sala de espera não aparece. | Confirme a caixa **Usar sala de espera antes do início**. No JIT com sessões diárias ou semanais, a espera aparece até o próximo horário. |
+| A sessão JIT não termina. | Confirme a **Duração da sessão**. Depois desse tempo a sala encerra. |
 
 ---
 

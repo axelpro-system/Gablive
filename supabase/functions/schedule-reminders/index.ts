@@ -95,13 +95,18 @@ serve(async (_req) => {
     const config = cfg as unknown as EmailConfig & { webinars: Webinar }
     const webinar = config.webinars
 
+    const anchorMs = webinar?.scheduled_at ? new Date(webinar.scheduled_at).getTime() : NaN
+    if (!Number.isFinite(anchorMs)) {
+      skipped++
+      continue
+    }
+
     // Calculate when to send:
     // - reminder (send_before_minutes > 0): X minutes BEFORE webinar starts
     // - replay  (send_before_minutes < 0): X minutes AFTER webinar starts
     const isReplay = config.send_before_minutes < 0
     const sendAt = new Date(
-      new Date(webinar.scheduled_at).getTime() +
-        (config.send_before_minutes ?? 0) * 60 * 1000,
+      anchorMs + (config.send_before_minutes ?? 0) * 60 * 1000,
     )
 
     // For replay, only send after the webinar has started
@@ -119,8 +124,9 @@ serve(async (_req) => {
     // Fetch registrations for this webinar
     const { data: registrations } = await supabaseClient
       .from("registrations")
-      .select("id, webinar_id, email, name")
+      .select("id, webinar_id, email, name, waitlisted")
       .eq("webinar_id", webinar.id)
+      .eq("waitlisted", false)
 
     if (!registrations || registrations.length === 0) {
       skipped++

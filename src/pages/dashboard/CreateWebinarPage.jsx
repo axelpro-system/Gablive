@@ -58,6 +58,14 @@ export default function CreateWebinarPage() {
       scheduledAtIso = parsedDate.toISOString();
     }
 
+    const needsSessionClock = form.is_just_in_time
+      && form.recurrence_type
+      && form.recurrence_type !== RECURRENCE_TYPE.NONE;
+    if (needsSessionClock && !scheduledAtIso) {
+      setError('Informe o horário das sessões diárias ou semanais.');
+      return;
+    }
+
     try {
       const webinar = await createWebinar({
         ...form,
@@ -218,11 +226,11 @@ export default function CreateWebinarPage() {
             </div>
           </div>
 
-          {!form.is_just_in_time && (
+          {(!form.is_just_in_time || (form.recurrence_type && form.recurrence_type !== RECURRENCE_TYPE.NONE)) && (
             <div className="form-row">
               <div className="input-group">
                 <label className="input-label" htmlFor="cw-date">
-                  {t('webinar.scheduledAt')}
+                  {form.is_just_in_time ? 'Horário das sessões' : t('webinar.scheduledAt')}
                 </label>
                 <input
                   id="cw-date"
@@ -230,28 +238,31 @@ export default function CreateWebinarPage() {
                   className="input"
                   value={form.scheduled_at}
                   onChange={(e) => updateField('scheduled_at', e.target.value)}
+                  required={form.is_just_in_time && form.recurrence_type !== RECURRENCE_TYPE.NONE}
                 />
               </div>
-              <div className="input-group">
-                <label className="input-label" htmlFor="cw-tz">
-                  {t('webinar.timezone')}
-                </label>
-                <select
-                  id="cw-tz"
-                  className="input select"
-                  value={form.timezone}
-                  onChange={(e) => updateField('timezone', e.target.value)}
-                >
-                  <option value="America/Sao_Paulo">São Paulo (BRT)</option>
-                  <option value="America/New_York">New York (EST)</option>
-                  <option value="America/Chicago">Chicago (CST)</option>
-                  <option value="America/Denver">Denver (MST)</option>
-                  <option value="America/Los_Angeles">Los Angeles (PST)</option>
-                  <option value="Europe/London">London (GMT)</option>
-                  <option value="Europe/Paris">Paris (CET)</option>
-                  <option value="Asia/Tokyo">Tokyo (JST)</option>
-                </select>
-              </div>
+              {!form.is_just_in_time && (
+                <div className="input-group">
+                  <label className="input-label" htmlFor="cw-tz">
+                    {t('webinar.timezone')}
+                  </label>
+                  <select
+                    id="cw-tz"
+                    className="input select"
+                    value={form.timezone}
+                    onChange={(e) => updateField('timezone', e.target.value)}
+                  >
+                    <option value="America/Sao_Paulo">São Paulo (BRT)</option>
+                    <option value="America/New_York">New York (EST)</option>
+                    <option value="America/Chicago">Chicago (CST)</option>
+                    <option value="America/Denver">Denver (MST)</option>
+                    <option value="America/Los_Angeles">Los Angeles (PST)</option>
+                    <option value="Europe/London">London (GMT)</option>
+                    <option value="Europe/Paris">Paris (CET)</option>
+                    <option value="Asia/Tokyo">Tokyo (JST)</option>
+                  </select>
+                </div>
+              )}
             </div>
           )}
 
@@ -271,6 +282,11 @@ export default function CreateWebinarPage() {
                   <option value={RECURRENCE_TYPE.DAILY}>Sessões diárias</option>
                   <option value={RECURRENCE_TYPE.WEEKLY}>Sessões semanais</option>
                 </select>
+                <p className="input-hint">
+                  {form.recurrence_type === RECURRENCE_TYPE.NONE
+                    ? 'Cada lead começa a sessão na hora em que entra.'
+                    : 'O lead espera o próximo horário e assiste a sessão desde o início.'}
+                </p>
               </div>
               <div className="input-group">
                 <label className="input-label" htmlFor="cw-duration">
@@ -284,6 +300,7 @@ export default function CreateWebinarPage() {
                   value={form.session_duration_minutes}
                   onChange={(e) => updateField('session_duration_minutes', parseInt(e.target.value, 10) || 60)}
                 />
+                <p className="input-hint">Depois desse tempo a sessão termina.</p>
               </div>
             </div>
           )}

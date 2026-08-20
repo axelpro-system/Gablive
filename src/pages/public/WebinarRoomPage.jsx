@@ -16,6 +16,8 @@ import { useSimulatedAudience } from '../../hooks/useSimulatedAudience';
 import { useRegistration } from '../../hooks/useRegistration';
 import { WEBINAR_STATUS, ANALYTICS_EVENTS } from '../../lib/constants';
 import { buildVideoEmbedUrl, getLiveRoomState, LIVE_ROOM_STATE } from '../../lib/liveRoomState';
+import { waitRoomTarget } from '../../lib/countdown';
+import { canAccessLiveSession } from '../../lib/publicRegistration';
 import CinemaScreenVideo from '../../components/video/CinemaScreenVideo';
 import { sanitizeInput } from '../../lib/sanitize';
 import {
@@ -196,7 +198,7 @@ export default function WebinarRoomPage() {
     );
   }, [webinar]);
 
-  const countdown = useCountdown(webinar?.scheduled_at);
+  const countdown = useCountdown(waitRoomTarget(webinar, registration));
 
   if (loading) {
     return (
@@ -215,8 +217,17 @@ export default function WebinarRoomPage() {
     );
   }
 
+  if (registration && !canAccessLiveSession(registration)) {
+    return (
+      <div className="room-error">
+        <h2>{webinar.title}</h2>
+        <p>{t('registration.waitlistedMessage')}</p>
+      </div>
+    );
+  }
+
   // LIVE-01: live status OR scheduled live with scheduled_at <= now opens player
-  const roomState = getLiveRoomState(webinar);
+  const roomState = getLiveRoomState(webinar, new Date(), registration);
   const isWaiting = roomState.state === LIVE_ROOM_STATE.WAITING || roomState.showWaiting;
   const isEnded = roomState.state === LIVE_ROOM_STATE.ENDED;
   const isUnavailable = roomState.state === LIVE_ROOM_STATE.UNAVAILABLE;
@@ -289,6 +300,11 @@ export default function WebinarRoomPage() {
               <div className="room-waiting">
                 <Clock size={48} />
                 <h2>{t('room.ended', { defaultValue: 'Este webinário foi encerrado.' })}</h2>
+                {webinar.replay_enabled && (
+                  <a className="btn btn-primary" href={`/replay/${webinar.slug}${registration?.id ? `?reg=${registration.id}` : ''}`}>
+                    Assistir replay
+                  </a>
+                )}
               </div>
             ) : isUnavailable || !embedUrl ? (
               <div className="room-video-placeholder">

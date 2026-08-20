@@ -38,6 +38,10 @@ export class RegistrationPage {
     if (data.phone && (await this.phoneInput.isVisible().catch(() => false))) {
       await this.phoneInput.fill(data.phone)
     }
+    const consent = this.page.locator('.reg-consent-checkbox input[type="checkbox"]')
+    if (await consent.isVisible().catch(() => false)) {
+      await consent.check()
+    }
   }
 
   async submit() {

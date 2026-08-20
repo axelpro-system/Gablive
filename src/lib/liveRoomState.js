@@ -1,4 +1,5 @@
 import { WEBINAR_STATUS, WEBINAR_TYPE } from './constants.js';
+import { getJitPlaybackState } from './jitSession.js';
 
 export const LIVE_ROOM_STATE = {
   WAITING: 'waiting',
@@ -72,7 +73,7 @@ function extractYoutubeId(url) {
   return null;
 }
 
-export function getLiveRoomState(webinar, now = new Date()) {
+export function getLiveRoomState(webinar, now = new Date(), registration = null) {
   if (!webinar) {
     return {
       state: LIVE_ROOM_STATE.UNAVAILABLE,
@@ -90,6 +91,24 @@ export function getLiveRoomState(webinar, now = new Date()) {
     return {
       state: LIVE_ROOM_STATE.ENDED,
       reason: 'webinar_ended',
+      showPlayer: false,
+      showWaiting: false,
+    };
+  }
+
+  const jitPlayback = getJitPlaybackState(webinar, registration, now);
+  if (jitPlayback === 'waiting') {
+    return {
+      state: LIVE_ROOM_STATE.WAITING,
+      reason: 'jit_session_upcoming',
+      showPlayer: false,
+      showWaiting: true,
+    };
+  }
+  if (jitPlayback === 'ended') {
+    return {
+      state: LIVE_ROOM_STATE.ENDED,
+      reason: 'jit_session_ended',
       showPlayer: false,
       showWaiting: false,
     };

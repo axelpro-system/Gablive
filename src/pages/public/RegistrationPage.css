@@ -30,6 +30,18 @@
   object-fit: contain;
 }
 
+.reg-progress {
+  height: 4px;
+  width: 100%;
+  background: color-mix(in srgb, var(--reg-progress, #e31c23) 18%, transparent);
+}
+
+.reg-progress-bar {
+  height: 100%;
+  width: 70%;
+  background: var(--reg-progress, #e31c23);
+}
+
 .reg-loading,
 .reg-error {
   min-height: 100vh;

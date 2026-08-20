@@ -86,17 +86,38 @@ serve(async (_req) => {
       )
     }
     // Token de acesso cross-device: o link do e-mail carrega o registration_id
-    // como ?reg=<id>, para a sala de espera/sala funcionarem em outro aparelho
-    // (sem localStorage). Consumido por WaitRoomPage/useRegistration.
+    // como ?reg=<id>. Lista de espera não recebe esse token — a inscrição
+    // pública sem id não abre a sala.
+    const waitlisted = registration?.waitlisted === true
+    if (waitlisted && type !== "confirmation") {
+      await supabaseClient
+        .from("email_queue")
+        .update({
+          status: "failed",
+          error: "Waitlisted registration cannot receive timed access email",
+          attempts: (item.attempts ?? 0) + 1,
+        })
+        .eq("id", item.id)
+      failed++
+      continue
+    }
+
     const regId = item.registration_id as string | undefined
-    const regQ = regId ? `?reg=${regId}` : ""
+    const liveQ = !waitlisted && regId ? `?reg=${regId}` : ""
+    const registerUrl = base && slug ? `${base}/register/${slug}` : base || ""
     const vars = {
       name,
       email,
       webinar_title: webinarTitle,
-      wait_url: base && slug ? `${base}/wait/${slug}${regQ}` : base || "",
-      room_url: base && slug ? `${base}/room/${slug}${regQ}` : base || "",
-      replay_url: base && slug ? `${base}/replay/${slug}${regQ}` : base || "",
+      wait_url: waitlisted
+        ? registerUrl
+        : (base && slug ? `${base}/wait/${slug}${liveQ}` : base || ""),
+      room_url: waitlisted
+        ? registerUrl
+        : (base && slug ? `${base}/room/${slug}${liveQ}` : base || ""),
+      replay_url: waitlisted
+        ? registerUrl
+        : (base && slug ? `${base}/replay/${slug}${liveQ}` : base || ""),
     }
 
     if (!to) {

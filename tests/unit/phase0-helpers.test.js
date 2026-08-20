@@ -317,6 +317,32 @@ describe('live room state and embed urls', () => {
     );
   });
 
+  it('keeps a JIT lead in waiting until the personal session starts', () => {
+    assert.equal(
+      getLiveRoomState({
+        type: 'recorded',
+        status: 'scheduled',
+        is_just_in_time: true,
+        session_duration_minutes: 60,
+        video_url: 'https://youtube.com/watch?v=dQw4w9WgXcQ',
+      }, now, { session_start_at: '2026-07-28T12:10:00.000Z' }).state,
+      LIVE_ROOM_STATE.WAITING
+    );
+  });
+
+  it('ends a JIT session after the configured duration', () => {
+    assert.equal(
+      getLiveRoomState({
+        type: 'recorded',
+        status: 'scheduled',
+        is_just_in_time: true,
+        session_duration_minutes: 60,
+        video_url: 'https://youtube.com/watch?v=dQw4w9WgXcQ',
+      }, now, { session_start_at: '2026-07-28T10:00:00.000Z' }).state,
+      LIVE_ROOM_STATE.ENDED
+    );
+  });
+
   it('returns unavailable when the room should play but has no supported video url', () => {
     assert.equal(
       getLiveRoomState({

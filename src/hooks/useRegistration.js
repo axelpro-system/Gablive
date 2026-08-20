@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { ANALYTICS_EVENTS } from '../lib/constants';
+import { canAccessLiveSession } from '../lib/publicRegistration';
 
 /**
  * Busca os dados do webinário e do registro do participante.
@@ -42,6 +43,10 @@ export function useRegistration(slug, supabase, trackEvent) {
 
           if (reg) {
             setRegistration(reg);
+            if (!canAccessLiveSession(reg)) {
+              setLoading(false);
+              return;
+            }
             // Mark as attended via SECURITY DEFINER RPC (anon cannot UPDATE via RLS)
             if (!reg.attended) {
               const { data: updated } = await supabase.rpc('mark_registration_attended', {

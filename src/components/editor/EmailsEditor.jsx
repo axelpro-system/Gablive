@@ -54,6 +54,7 @@ export default function EmailsEditor({ webinarId }) {
           subject: config.subject,
           body_html: config.body_html,
           enabled: config.enabled,
+          send_before_minutes: config.send_before_minutes,
         })
         .eq('id', config.id);
     }
@@ -105,6 +106,33 @@ export default function EmailsEditor({ webinarId }) {
             </div>
             
             <div className="email-card-body">
+              {config.type === 'reminder' && (
+                <div className="input-group">
+                  <label className="input-label">Minutos antes do início</label>
+                  <input
+                    type="number"
+                    className="input"
+                    min={1}
+                    value={config.send_before_minutes > 0 ? config.send_before_minutes : 60}
+                    onChange={(e) => updateConfig(config.id, 'send_before_minutes', parseInt(e.target.value, 10) || 60)}
+                    disabled={!config.enabled}
+                  />
+                  <span className="input-hint">Usa a data/hora do webinário (ou o horário das sessões JIT). Sem data compartilhada, o lembrete não é enviado.</span>
+                </div>
+              )}
+              {config.type === 'replay' && (
+                <div className="input-group">
+                  <label className="input-label">Horas depois do início</label>
+                  <input
+                    type="number"
+                    className="input"
+                    min={1}
+                    value={Math.max(1, Math.abs(config.send_before_minutes || 1440) / 60)}
+                    onChange={(e) => updateConfig(config.id, 'send_before_minutes', -Math.abs(parseInt(e.target.value, 10) || 24) * 60)}
+                    disabled={!config.enabled}
+                  />
+                </div>
+              )}
               <div className="input-group">
                 <label className="input-label">Assunto</label>
                 <input 

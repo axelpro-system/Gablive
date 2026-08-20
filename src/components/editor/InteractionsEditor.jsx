@@ -3,7 +3,11 @@ import { supabase } from '../../lib/supabase';
 import { MessageSquare, ExternalLink, BarChart3, Plus, Trash2, Save, ShoppingCart, Users2, Upload, Download } from 'lucide-react';
 import Papa from 'papaparse';
 import { AUDIENCE_MODE } from '../../lib/constants';
+import { buildBulkDeleteConfirmMessage, chunkIds, filterOutIds } from '../../lib/bulkSelection';
+import { tallyPollVotes } from '../../lib/pollResults';
+import useBulkSelection from '../../hooks/useBulkSelection';
 import TimeInput from './TimeInput';
+import BulkSelectBar from './BulkSelectBar';
 import './InteractionsEditor.css';
 
 const CHAT_TEMPLATES = [
@@ -35,7 +39,7 @@ export default function InteractionsEditor({ webinarId }) {
   const [ctas, setCtas] = useState([]);
   const [newCta, setNewCta] = useState({
     title: '', description: '', button_text: 'Comprar Agora', button_url: '', show_at_seconds: 0,
-    original_price: '', sale_price: '', pitch_start_seconds: '', banner_desktop_url: '', banner_mobile_url: '',
+    original_price: '', sale_price: '', pitch_start_seconds: '', hide_at_seconds: '', banner_desktop_url: '', banner_mobile_url: '',
   });
 
   // Poll state
@@ -49,8 +53,17 @@ export default function InteractionsEditor({ webinarId }) {
   // Audience config state
   const [audience, setAudience] = useState(null);
   const [savingAudience, setSavingAudience] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(null);
+  const [bulkError, setBulkError] = useState(null);
+
+  const chatSel = useBulkSelection(messages);
+  const ctaSel = useBulkSelection(ctas);
+  const salesSel = useBulkSelection(sales);
 
   useEffect(() => {
+    chatSel.clear();
+    ctaSel.clear();
+    salesSel.clear();
     fetchData();
   }, [webinarId]);
 
@@ -76,7 +89,7 @@ export default function InteractionsEditor({ webinarId }) {
     // Fetch Polls
     const { data: pollData } = await supabase
       .from('polls')
-      .select('*')
+      .select('*, poll_responses(selected_option)')
       .eq('webinar_id', webinarId)
       .order('show_at_seconds', { ascending: true });
     if (pollData) setPolls(pollData);
@@ -147,13 +160,16 @@ export default function InteractionsEditor({ webinarId }) {
       original_price: newCta.original_price ? parseFloat(newCta.original_price) : null,
       sale_price: newCta.sale_price ? parseFloat(newCta.sale_price) : null,
       pitch_start_seconds: newCta.pitch_start_seconds ? parseInt(newCta.pitch_start_seconds, 10) : null,
+      hide_at_seconds: newCta.hide_at_seconds === '' || newCta.hide_at_seconds == null
+        ? null
+        : parseInt(newCta.hide_at_seconds, 10),
     }).select().single();
 
     if (data) {
       setCtas([...ctas, data].sort((a,b) => a.show_at_seconds - b.show_at_seconds));
       setNewCta({
         title: '', description: '', button_text: 'Comprar Agora', button_url: '', show_at_seconds: 0,
-        original_price: '', sale_price: '', pitch_start_seconds: '', banner_desktop_url: '', banner_mobile_url: '',
+        original_price: '', sale_price: '', pitch_start_seconds: '', hide_at_seconds: '', banner_desktop_url: '', banner_mobile_url: '',
       });
     }
   };
@@ -181,6 +197,56 @@ export default function InteractionsEditor({ webinarId }) {
   const deleteSale = async (id) => {
     await supabase.from('sales_notifications').delete().eq('id', id);
     setSales(sales.filter((s) => s.id !== id));
+  };
+
+  const bulkDelete = async (kind) => {
+    const targets = {
+      chat: { table: 'simulated_messages', ids: chatSel.selectedIds, setter: setMessages, clear: chatSel.clear },
+      cta: { table: 'cta_configs', ids: ctaSel.selectedIds, setter: setCtas, clear: ctaSel.clear },
+      sales: { table: 'sales_notifications', ids: salesSel.selectedIds, setter: setSales, clear: salesSel.clear },
+    };
+    const target = targets[kind];
+    const ids = target?.ids || [];
+    if (!ids.length || bulkDeleting) return;
+
+    const confirmMsg = buildBulkDeleteConfirmMessage(kind, ids.length);
+    if (!window.confirm(confirmMsg)) return;
+
+    setBulkDeleting(kind);
+    setBulkError(null);
+
+    const removed = [];
+    try {
+      for (const batch of chunkIds(ids)) {
+        const { error } = await supabase
+          .from(target.table)
+          .delete()
+          .eq('webinar_id', webinarId)
+          .in('id', batch);
+
+        if (error) {
+          if (removed.length > 0) {
+            target.setter((prev) => filterOutIds(prev, removed));
+          }
+          const suffix = removed.length
+            ? ` ${removed.length} item(ns) já foram apagados.`
+            : '';
+          setBulkError((error.message || 'Não foi possível apagar os itens selecionados.') + suffix);
+          return;
+        }
+        removed.push(...batch);
+      }
+
+      target.setter((prev) => filterOutIds(prev, ids));
+      target.clear();
+    } catch (err) {
+      if (removed.length > 0) {
+        target.setter((prev) => filterOutIds(prev, removed));
+      }
+      setBulkError(err?.message || 'Não foi possível apagar os itens selecionados.');
+    } finally {
+      setBulkDeleting(null);
+    }
   };
 
   const saveAudience = async (e) => {
@@ -384,10 +450,30 @@ export default function InteractionsEditor({ webinarId }) {
                 </div>
               </form>
 
+              {bulkError && activeSubTab === 'chat' && (
+                <p className="bulk-select-error" role="alert">{bulkError}</p>
+              )}
+              <BulkSelectBar
+                total={messages.length}
+                selectedCount={chatSel.selectedCount}
+                allSelected={chatSel.allSelected}
+                someSelected={chatSel.someSelected}
+                onToggleAll={chatSel.toggleAll}
+                onDelete={() => bulkDelete('chat')}
+                deleting={Boolean(bulkDeleting)}
+              />
               <div className="timeline-list mt-4">
                 {messages.length === 0 ? <p className="text-gray-500 text-sm">Nenhuma mensagem simulada.</p> : (
                   messages.map(msg => (
-                    <div key={msg.id} className="timeline-item">
+                    <div key={msg.id} className={`timeline-item${chatSel.selected.has(msg.id) ? ' is-selected' : ''}`}>
+                      <label className="timeline-select">
+                        <input
+                          type="checkbox"
+                          checked={chatSel.selected.has(msg.id)}
+                          onChange={() => chatSel.toggle(msg.id)}
+                          aria-label={`Selecionar mensagem de ${msg.author_name}`}
+                        />
+                      </label>
                       <span className="timeline-time">{formatSeconds(msg.timestamp_seconds)}</span>
                       <div className="timeline-content">
                         <strong>{msg.author_name}</strong>: {msg.message}
@@ -435,6 +521,10 @@ export default function InteractionsEditor({ webinarId }) {
                     <label className="input-label">Início do pitch (opcional)</label>
                     <TimeInput value={newCta.pitch_start_seconds} onChange={(v) => setNewCta({ ...newCta, pitch_start_seconds: v })} allowEmpty />
                   </div>
+                  <div className="input-group">
+                    <label className="input-label">Esconder em (opcional)</label>
+                    <TimeInput value={newCta.hide_at_seconds} onChange={(v) => setNewCta({ ...newCta, hide_at_seconds: v })} allowEmpty />
+                  </div>
                 </div>
                 <div className="form-row">
                   <input type="url" className="input" placeholder="Banner desktop (URL)" value={newCta.banner_desktop_url} onChange={e => setNewCta({...newCta, banner_desktop_url: e.target.value})} />
@@ -443,11 +533,34 @@ export default function InteractionsEditor({ webinarId }) {
                 <button type="submit" className="btn btn-primary"><Plus size={16} /> Adicionar Oferta</button>
               </form>
 
+              {bulkError && activeSubTab === 'cta' && (
+                <p className="bulk-select-error" role="alert">{bulkError}</p>
+              )}
+              <BulkSelectBar
+                total={ctas.length}
+                selectedCount={ctaSel.selectedCount}
+                allSelected={ctaSel.allSelected}
+                someSelected={ctaSel.someSelected}
+                onToggleAll={ctaSel.toggleAll}
+                onDelete={() => bulkDelete('cta')}
+                deleting={Boolean(bulkDeleting)}
+              />
               <div className="timeline-list mt-4">
                 {ctas.length === 0 ? <p className="text-gray-500 text-sm">Nenhuma oferta configurada.</p> : (
                   ctas.map(cta => (
-                    <div key={cta.id} className="timeline-item">
-                      <span className="timeline-time">{formatSeconds(cta.show_at_seconds)}</span>
+                    <div key={cta.id} className={`timeline-item${ctaSel.selected.has(cta.id) ? ' is-selected' : ''}`}>
+                      <label className="timeline-select">
+                        <input
+                          type="checkbox"
+                          checked={ctaSel.selected.has(cta.id)}
+                          onChange={() => ctaSel.toggle(cta.id)}
+                          aria-label={`Selecionar oferta ${cta.title}`}
+                        />
+                      </label>
+                      <span className="timeline-time">
+                        {formatSeconds(cta.show_at_seconds)}
+                        {cta.hide_at_seconds != null ? `–${formatSeconds(cta.hide_at_seconds)}` : ''}
+                      </span>
                       <div className="timeline-content flex-col">
                         <strong>{cta.title}</strong>
                         {cta.sale_price != null && (
@@ -497,16 +610,26 @@ export default function InteractionsEditor({ webinarId }) {
 
               <div className="timeline-list mt-4">
                 {polls.length === 0 ? <p className="text-gray-500 text-sm">Nenhuma enquete configurada.</p> : (
-                  polls.map(poll => (
+                  polls.map(poll => {
+                    const tally = tallyPollVotes(poll);
+                    return (
                     <div key={poll.id} className="timeline-item">
                       <span className="timeline-time">{formatSeconds(poll.show_at_seconds)}</span>
                       <div className="timeline-content flex-col">
                         <strong>{poll.question}</strong>
-                        <span className="text-xs text-gray-500">{poll.options.join(' | ')}</span>
+                        <span className="text-xs text-gray-500">
+                          {(poll.options || []).map((option, index) => (
+                            `${option} (${tally.counts[index] || 0})`
+                          )).join(' | ')}
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          {tally.total === 0 ? 'Ainda sem votos.' : `${tally.total} voto${tally.total === 1 ? '' : 's'}.`}
+                        </span>
                       </div>
                       <button className="btn btn-ghost btn-xs btn-icon danger" onClick={() => deletePoll(poll.id)}><Trash2 size={14} /></button>
                     </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </div>
@@ -543,10 +666,30 @@ export default function InteractionsEditor({ webinarId }) {
                 <button type="submit" className="btn btn-primary"><Plus size={16} /> Adicionar Venda</button>
               </form>
 
+              {bulkError && activeSubTab === 'sales' && (
+                <p className="bulk-select-error" role="alert">{bulkError}</p>
+              )}
+              <BulkSelectBar
+                total={sales.length}
+                selectedCount={salesSel.selectedCount}
+                allSelected={salesSel.allSelected}
+                someSelected={salesSel.someSelected}
+                onToggleAll={salesSel.toggleAll}
+                onDelete={() => bulkDelete('sales')}
+                deleting={Boolean(bulkDeleting)}
+              />
               <div className="timeline-list mt-4">
                 {sales.length === 0 ? <p className="text-gray-500 text-sm">Nenhuma venda simulada.</p> : (
                   sales.map(sale => (
-                    <div key={sale.id} className="timeline-item">
+                    <div key={sale.id} className={`timeline-item${salesSel.selected.has(sale.id) ? ' is-selected' : ''}`}>
+                      <label className="timeline-select">
+                        <input
+                          type="checkbox"
+                          checked={salesSel.selected.has(sale.id)}
+                          onChange={() => salesSel.toggle(sale.id)}
+                          aria-label={`Selecionar venda de ${sale.buyer_name}`}
+                        />
+                      </label>
                       <span className="timeline-time">{formatSeconds(sale.show_at_seconds)}</span>
                       <div className="timeline-content flex-col">
                         <strong>{sale.buyer_name}{sale.buyer_location ? ` (${sale.buyer_location})` : ''}</strong>

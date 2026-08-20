@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { logger } from '../lib/logger';
-import { WAIT_ROOM_JIT_DELAY_SECONDS } from '../lib/constants';
+import { computeJitSessionStartAt } from '../lib/jitSession';
 
 export async function requestAccessEmail(webinarId, email) {
   const { error: recoverError } = await supabase.rpc('recover_registration', {
@@ -41,10 +41,7 @@ export function useRegistrationSubmit(webinar) {
         return { success: false, error: 'alreadyRegistered' };
       }
 
-      const jitDelayMs = webinar.use_wait_room ? WAIT_ROOM_JIT_DELAY_SECONDS * 1000 : 0;
-      const sessionStartAt = webinar.is_just_in_time
-        ? new Date(Date.now() + jitDelayMs).toISOString()
-        : null;
+      const sessionStartAt = computeJitSessionStartAt(webinar);
 
       // SECURITY DEFINER RPC — anon can INSERT but cannot SELECT the row back
       // (org-scoped RLS), so insert().select() fails as an RLS violation.
