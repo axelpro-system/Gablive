@@ -169,17 +169,17 @@ async function run() {
   divider('Tentativa de acesso cruzado (deve ser bloqueado)');
 
   if (orgA && orgB) {
-    // A tenta ver webinars de B
-    const { data: crossA } = await supabaseA
+    // A tenta ver webinars de qualquer outra org — a RLS deve devolver zero linhas.
+    const { data: foreignWebinarsA } = await supabaseA
       .from('webinars')
-      .select('id, title')
-      .limit(5);
-    const belongsToB = (crossA || []).filter(
-      (w) => w.org_id !== orgA  // org_id não é retornado da query, então isso é uma aproximação
-    );
-    // Melhor: tentar acessar diretamente um webinar que sabemos ser de B
-    // Como não sabemos o ID, contamos quantos webinars A vê e verificamos
-    // que A NÃO consegue acessar nenhum dado da org B
+      .select('id, org_id')
+      .neq('org_id', orgA);
+    if ((foreignWebinarsA || []).length === 0) {
+      ok('Org A não vê webinars de outras organizações');
+    } else {
+      fail('Org A vê webinars de outras organizações', `${foreignWebinarsA.length} webinar(s) de org estranha`);
+    }
+
     const { data: profilesA } = await supabaseA
       .from('profiles')
       .select('org_id');
@@ -228,6 +228,59 @@ async function run() {
     }
   }
 
+  // ── 5b. Valor, saúde e planos (migrations 033–036) ─────────────────────
+  divider('Valor entregue, saúde e planos');
+
+  if (orgA && orgB) {
+    const { error: probeError } = await supabaseA.rpc('get_org_seat_usage');
+    if (probeError?.code === 'PGRST202') {
+      console.log('  ⚠️  Pulando: migrations 033–036 ainda não aplicadas neste projeto.');
+    } else {
+      const { data: isAdminA } = await supabaseA.rpc('is_platform_admin');
+      if (isAdminA) {
+        console.log('  ⚠️  Usuário A é admin da plataforma: checagens de bloqueio cruzado não se aplicam a ele.');
+      }
+
+      const { data: ownMetrics, error: ownMetricsError } = await supabaseA
+        .rpc('get_org_value_metrics', { p_org_id: orgA });
+      if (!ownMetricsError && ownMetrics?.current) {
+        ok('Org A lê as próprias métricas de valor');
+      } else {
+        fail('Org A não conseguiu ler as próprias métricas', ownMetricsError?.message);
+      }
+
+      if (!isAdminA) {
+        const { error: crossMetricsError } = await supabaseA
+          .rpc('get_org_value_metrics', { p_org_id: orgB });
+        if (crossMetricsError) ok('Org A NÃO lê as métricas de valor de B');
+        else fail('Org A leu as métricas de valor de B');
+
+        const { error: healthError } = await supabaseA.rpc('get_platform_org_health');
+        if (healthError) ok('Quem não é da plataforma NÃO acessa a saúde de todas as orgs');
+        else fail('Usuário comum acessou get_platform_org_health');
+
+        const { data: subsA } = await supabaseA.from('org_subscriptions').select('org_id');
+        if ((subsA || []).length === 0) ok('Org A não lê assinaturas diretamente (observações internas protegidas)');
+        else fail('Org A leu linhas de org_subscriptions', `${subsA.length} linha(s)`);
+
+        const { error: crossSeatsError } = await supabaseA
+          .rpc('get_org_seat_usage', { p_org_id: orgB });
+        if (crossSeatsError) ok('Org A NÃO lê o uso de assentos de B');
+        else fail('Org A leu o uso de assentos de B');
+      }
+
+      const { data: seatsA, error: seatsAError } = await supabaseA.rpc('get_org_seat_usage');
+      if (!seatsAError && Number.isInteger(seatsA?.used)) {
+        ok(`Org A lê o próprio uso de assentos (${seatsA.used}/${seatsA.limit ?? '∞'})`);
+      } else {
+        fail('Org A não conseguiu ler o próprio uso de assentos', seatsAError?.message);
+      }
+      if (seatsA && !seatsA.has_subscription) {
+        fail('Org A está sem assinatura', 'o backfill da migration 035 deveria cobrir todas as orgs');
+      }
+    }
+  }
+
   // ── 6. Dados públicos (registro, replay) devem ser acessíveis sem auth ──
   divider('Dados públicos (sem autenticação)');
 
@@ -243,6 +296,13 @@ async function run() {
     ok(`Dados públicos acessíveis: ${publicPages.length} página(s) de registro via anon key`);
   } else {
     fail('Dados públicos NÃO acessíveis via anon key');
+  }
+
+  const { error: anonSeatsError } = await anonClient.rpc('get_org_seat_usage');
+  if (anonSeatsError) {
+    ok('Visitante anônimo NÃO lê uso de assentos');
+  } else {
+    fail('Visitante anônimo leu uso de assentos');
   }
 
   console.log('\n' + '═'.repeat(50));

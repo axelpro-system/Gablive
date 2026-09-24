@@ -23,6 +23,7 @@ export default function ForgotPasswordPage() {
       await resetPassword(email);
       setSent(true);
     } catch (err) {
+      console.error('Erro ao solicitar redefinição de senha:', err);
       setError(t('auth.resetError'));
     } finally {
       setLoading(false);

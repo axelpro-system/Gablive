@@ -1,9 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
 import { useOrg } from '../../contexts/OrgContext';
 import { fetchAuditLogs } from '../../lib/audit';
-import { supabase } from '../../lib/supabase';
-import { FileText, Filter, RefreshCw, Clock, User, FileEdit, Trash2, UserPlus, Radio, Square } from 'lucide-react';
+import { FileText, Filter, RefreshCw, Clock, FileEdit, Trash2, UserPlus, Radio, Square } from 'lucide-react';
 import './DashboardPage.css';
 
 const ACTION_LABELS = {
@@ -43,7 +41,6 @@ function formatDate(isoString) {
 }
 
 export default function AuditLogPage() {
-  const { profile } = useAuth();
   const { orgId } = useOrg();
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);

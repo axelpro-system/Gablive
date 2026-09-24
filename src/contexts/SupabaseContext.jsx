@@ -1,5 +1,5 @@
 import { createContext, useContext, useMemo } from 'react';
-import { createSupabaseClient, supabase as defaultClient } from '../lib/supabase';
+import { supabase as defaultClient } from '../lib/supabase';
 
 const SupabaseContext = createContext(null);
 

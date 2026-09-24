@@ -38,6 +38,7 @@ export default [
         FormData: 'readonly',
         Blob: 'readonly',
         URL: 'readonly',
+        Response: 'readonly',
         process: 'readonly',
         __dirname: 'readonly',
       },
@@ -47,7 +48,8 @@ export default [
       ...js.configs.recommended.rules,
       'react/jsx-uses-react': 'error',
       'react/jsx-uses-vars': 'error',
-      'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+      // `_nome` marca descarte intencional (ex.: omitir campos num destructuring com ...rest).
+      'no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
       'no-undef': 'warn',
     },
     settings: {

@@ -2,12 +2,14 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Save, Mail, Clock } from 'lucide-react';
 import { defaultEmailConfigsForWebinar, getDefaultEmailBodyHtml } from '../../lib/emailTemplates';
+import InlineAlert from '../ui/InlineAlert';
 import './EmailsEditor.css';
 
 export default function EmailsEditor({ webinarId }) {
   const [configs, setConfigs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [feedback, setFeedback] = useState(null);
 
   useEffect(() => {
     const fetchConfigs = async () => {
@@ -45,22 +47,33 @@ export default function EmailsEditor({ webinarId }) {
 
   const handleSave = async () => {
     setSaving(true);
-    
-    // Update all configs
-    for (const config of configs) {
-      await supabase
-        .from('email_configs')
-        .update({
-          subject: config.subject,
-          body_html: config.body_html,
-          enabled: config.enabled,
-          send_before_minutes: config.send_before_minutes,
-        })
-        .eq('id', config.id);
-    }
-    
+    setFeedback(null);
+
+    const results = await Promise.all(
+      configs.map((config) =>
+        supabase
+          .from('email_configs')
+          .update({
+            subject: config.subject,
+            body_html: config.body_html,
+            enabled: config.enabled,
+            send_before_minutes: config.send_before_minutes,
+          })
+          .eq('id', config.id)
+      )
+    );
+
     setSaving(false);
-    alert('Configurações de e-mail salvas com sucesso!');
+    const failed = results.filter((r) => r.error);
+    if (failed.length > 0) {
+      failed.forEach((r) => console.error('Erro ao salvar e-mail:', r.error));
+      setFeedback({
+        type: 'error',
+        text: `Não foi possível salvar ${failed.length} de ${configs.length} e-mail(s). Tente novamente.`,
+      });
+      return;
+    }
+    setFeedback({ type: 'success', text: 'Configurações de e-mail salvas.' });
   };
 
   const updateConfig = (id, field, value) => {
@@ -80,6 +93,12 @@ export default function EmailsEditor({ webinarId }) {
           {saving ? <span className="spinner spinner-sm" /> : <><Save size={16} /> Salvar Alterações</>}
         </button>
       </div>
+
+      {feedback && (
+        <InlineAlert type={feedback.type} onClose={() => setFeedback(null)} className="mb-4">
+          {feedback.text}
+        </InlineAlert>
+      )}
 
       <div className="emails-list">
         {configs.map(config => (

@@ -25,6 +25,7 @@ export default function LoginPage() {
       await signIn({ email, password });
       navigate('/dashboard');
     } catch (err) {
+      console.error('Erro ao entrar:', err);
       setError(t('auth.loginError'));
     } finally {
       setLoading(false);

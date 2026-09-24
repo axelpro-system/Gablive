@@ -113,6 +113,13 @@ export default function RegistrationPage() {
   };
 
   const { submitRegistration, submitting, error, setError } = useRegistrationSubmit(webinar);
+  const errorRef = useRef(null);
+
+  // No celular o erro fica acima da dobra depois do toque em "enviar": traz para a tela.
+  useEffect(() => {
+    if (error) errorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [error]);
+
   const countdown = useCountdown(webinar?.scheduled_at);
 
   const scrollToForm = (e) => {
@@ -375,7 +382,11 @@ export default function RegistrationPage() {
               <span className="reg-form-kicker">INSCRIÇÃO GRATUITA</span>
               <h2 className="reg-form-title">{block.data?.title || t('registration.title')}</h2>
 
-              {error && <div className="auth-error">{error}</div>}
+              {error && (
+                <div ref={errorRef} className="reg-form-error" role="alert">
+                  {error}
+                </div>
+              )}
 
               <form onSubmit={handleSubmit} className="reg-form">
                 <div className="input-group">

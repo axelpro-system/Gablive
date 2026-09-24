@@ -5,6 +5,8 @@ import { useOrg } from '../../contexts/OrgContext';
 import { Layout, Save, MonitorPlay } from 'lucide-react';
 import { RECURRENCE_TYPE } from '../../lib/constants';
 import { buildCinemaPath } from '../video/CinemaScreenVideo';
+import { toDatetimeLocalValue, fromDatetimeLocalValue } from '../../lib/format';
+import InlineAlert from '../ui/InlineAlert';
 import './ConfigEditor.css';
 
 const PRESENTATION_DEFAULTS = {
@@ -71,6 +73,7 @@ export default function ConfigEditor({ webinar, setWebinar, id }) {
   const { orgId } = useOrg();
 
   const [saving, setSaving] = useState(false);
+  const [feedback, setFeedback] = useState(null);
   const [templates, setTemplates] = useState([]);
 
   useEffect(() => {
@@ -92,9 +95,10 @@ export default function ConfigEditor({ webinar, setWebinar, id }) {
       && webinar.recurrence_type
       && webinar.recurrence_type !== RECURRENCE_TYPE.NONE;
     if (needsSessionClock && !webinar.scheduled_at) {
-      alert('Informe o horário das sessões diárias ou semanais.');
+      setFeedback({ type: 'error', text: 'Informe o horário das sessões diárias ou semanais.' });
       return;
     }
+    setFeedback(null);
     setSaving(true);
 
     const { error } = await supabase
@@ -121,9 +125,12 @@ export default function ConfigEditor({ webinar, setWebinar, id }) {
       .eq('id', id);
 
     setSaving(false);
-    if (!error) {
-      alert(t('common.saved'));
+    if (error) {
+      console.error('Erro ao salvar configurações do webinário:', error);
+      setFeedback({ type: 'error', text: t('common.saveError') });
+      return;
     }
+    setFeedback({ type: 'success', text: t('common.saved') });
   };
 
   /** Atualiza apenas a subconfiguração de apresentação (settings.presentation). */
@@ -282,8 +289,8 @@ export default function ConfigEditor({ webinar, setWebinar, id }) {
               <div className="input-group">
                 <label className="input-label">{webinar.is_just_in_time ? 'Horário das sessões' : 'Data e Hora'}</label>
                 <input type="datetime-local" className="input"
-                  value={webinar.scheduled_at ? new Date(webinar.scheduled_at).toISOString().slice(0, 16) : ''}
-                  onChange={e => setWebinar({ ...webinar, scheduled_at: new Date(e.target.value).toISOString() })}
+                  value={toDatetimeLocalValue(webinar.scheduled_at)}
+                  onChange={e => setWebinar({ ...webinar, scheduled_at: fromDatetimeLocalValue(e.target.value) })}
                 />
               </div>
             </div>
@@ -423,6 +430,12 @@ export default function ConfigEditor({ webinar, setWebinar, id }) {
                 </div>
               </div>
             </div>
+          )}
+
+          {feedback && (
+            <InlineAlert type={feedback.type} onClose={() => setFeedback(null)} className="mb-4">
+              {feedback.text}
+            </InlineAlert>
           )}
 
           <div className="form-actions">

@@ -92,3 +92,26 @@
     margin-bottom: var(--space-4);
   }
 }
+/* Meu plano (somente leitura) */
+.my-plan {
+  margin-top: var(--space-6);
+}
+
+.my-plan-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--space-4);
+  margin: 0;
+}
+
+.my-plan-grid dt {
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-1);
+}
+
+.my-plan-grid dd {
+  margin: 0;
+  font-weight: var(--font-medium);
+  color: var(--color-text);
+}

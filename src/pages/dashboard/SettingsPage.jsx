@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { Building, User, Save, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import MyPlanSection from '../../components/settings/MyPlanSection';
 import './SettingsPage.css';
 
 const TOAST_DURATION = 4000;
@@ -368,6 +369,8 @@ export default function SettingsPage() {
           </button>
         </div>
       </form>
+
+      <MyPlanSection />
     </div>
   );
 }

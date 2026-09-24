@@ -4,9 +4,10 @@ import {
   Shield, Building2, Users, Video, Activity, ScrollText, Settings,
   Search, ChevronLeft, ChevronRight, AlertTriangle, CheckCircle,
   XCircle, Trash2, Ban, RefreshCw, Server,
-  Mail, Clock, TrendingUp, X
+  Mail, Clock, TrendingUp, X, HeartPulse
 } from 'lucide-react'
 import { adminApi } from '../../lib/adminApi'
+import OrgHealthTab from '../../components/admin/OrgHealthTab'
 import './AdminGatewayPage.css'
 
 // ─── Shared Components ─────────────────────────────────────────────────────────
@@ -276,7 +277,6 @@ function TabOverview() {
 // ─── Tab: Organizations ────────────────────────────────────────────────────────
 
 function TabOrgs() {
-  const { t } = useTranslation()
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
   const [data, setData] = useState(null)
@@ -395,7 +395,6 @@ function TabOrgs() {
 // ─── Tab: Users ────────────────────────────────────────────────────────────────
 
 function TabUsers() {
-  const { t } = useTranslation()
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
   const [data, setData] = useState(null)
@@ -470,7 +469,6 @@ function TabUsers() {
 // ─── Tab: Webinars ────────────────────────────────────────────────────────────
 
 function TabWebinars() {
-  const { t } = useTranslation()
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
@@ -582,7 +580,6 @@ function TabWebinars() {
 // ─── Tab: System ──────────────────────────────────────────────────────────────
 
 function TabSystem() {
-  const { t } = useTranslation()
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
 
@@ -685,7 +682,6 @@ function TabSystem() {
 // ─── Tab: Audit ───────────────────────────────────────────────────────────────
 
 function TabAudit() {
-  const { t } = useTranslation()
   const [page, setPage] = useState(1)
   const [entityFilter, setEntityFilter] = useState('')
   const [data, setData] = useState(null)
@@ -764,7 +760,6 @@ function TabAudit() {
 // ─── Tab: Settings ─────────────────────────────────────────────────────────────
 
 function TabSettings() {
-  const { t } = useTranslation()
   const [admins, setAdmins] = useState([])
   const [loading, setLoading] = useState(true)
   const [addEmail, setAddEmail] = useState('')
@@ -897,6 +892,7 @@ function TabSettings() {
 const TABS = [
   { key: 'overview', label: 'Visão Geral', icon: Activity },
   { key: 'orgs', label: 'Organizações', icon: Building2 },
+  { key: 'health', label: 'Saúde', icon: HeartPulse },
   { key: 'users', label: 'Usuários', icon: Users },
   { key: 'webinars', label: 'Webinários', icon: Video },
   { key: 'system', label: 'Sistema', icon: Server },
@@ -905,13 +901,13 @@ const TABS = [
 ]
 
 export default function AdminGatewayPage() {
-  const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState('overview')
 
   const renderTab = () => {
     switch (activeTab) {
       case 'overview': return <TabOverview />
       case 'orgs': return <TabOrgs />
+      case 'health': return <OrgHealthTab />
       case 'users': return <TabUsers />
       case 'webinars': return <TabWebinars />
       case 'system': return <TabSystem />

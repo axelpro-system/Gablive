@@ -20,6 +20,7 @@ import { waitRoomTarget } from '../../lib/countdown';
 import { canAccessLiveSession } from '../../lib/publicRegistration';
 import CinemaScreenVideo from '../../components/video/CinemaScreenVideo';
 import { sanitizeInput } from '../../lib/sanitize';
+import { formatCurrency } from '../../lib/format';
 import {
   Send, Users, Radio, Clock, ExternalLink, X,
   ThumbsUp, MessageCircle, BarChart3, Volume2, Heart,
@@ -390,12 +391,12 @@ export default function WebinarRoomPage() {
                 <div className="room-cta-info">
                   <h2 className="room-cta-title">{cta.title}</h2>
                   {cta.description && <p className="room-cta-description">{cta.description}</p>}
-                  {cta.sale_price != null && (
+                  {formatCurrency(cta.sale_price) && (
                     <p className="room-cta-price">
-                      {cta.original_price != null && (
-                        <s className="room-cta-price-original">R$ {Number(cta.original_price).toFixed(2)}</s>
+                      {formatCurrency(cta.original_price) && (
+                        <s className="room-cta-price-original">{formatCurrency(cta.original_price)}</s>
                       )}
-                      <span className="room-cta-price-sale">R$ {Number(cta.sale_price).toFixed(2)}</span>
+                      <span className="room-cta-price-sale">{formatCurrency(cta.sale_price)}</span>
                     </p>
                   )}
                 </div>

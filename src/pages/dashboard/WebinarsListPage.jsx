@@ -24,8 +24,10 @@ import {
   ArchiveRestore,
   Star,
   StarOff,
+  Check,
+  AlertCircle,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import './WebinarsListPage.css';
 
 const VIEWS = [
@@ -43,6 +45,33 @@ export default function WebinarsListPage() {
   const [openMenu, setOpenMenu] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [busyAction, setBusyAction] = useState(null);
+  const [toast, setToast] = useState(null);
+  const toastTimer = useRef(null);
+
+  const showToast = (type, text) => {
+    clearTimeout(toastTimer.current);
+    setToast({ type, text });
+    toastTimer.current = setTimeout(() => setToast(null), 2500);
+  };
+
+  useEffect(() => () => clearTimeout(toastTimer.current), []);
+
+  // Fecha o menu ⋮ ao clicar fora dele ou apertar Esc.
+  useEffect(() => {
+    if (!openMenu) return undefined;
+    const onPointerDown = (e) => {
+      if (e.target.closest?.('[data-menu-id]')?.dataset.menuId !== openMenu) setOpenMenu(null);
+    };
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') setOpenMenu(null);
+    };
+    document.addEventListener('mousedown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [openMenu]);
 
   const dateLocale = i18n.language === 'pt-BR' ? ptBR : enUS;
 
@@ -58,10 +87,16 @@ export default function WebinarsListPage() {
     refetch();
   };
 
-  const copyRegistrationLink = (slug) => {
+  const copyRegistrationLink = async (slug) => {
     const url = `${window.location.origin}/register/${slug}`;
-    navigator.clipboard.writeText(url);
     setOpenMenu(null);
+    try {
+      await navigator.clipboard.writeText(url);
+      showToast('success', t('webinar.linkCopied'));
+    } catch (err) {
+      console.error('Falha ao copiar link de inscrição:', err);
+      showToast('error', t('webinar.copyLinkError'));
+    }
   };
 
   const handleDuplicate = async (webinar) => {
@@ -196,10 +231,14 @@ export default function WebinarsListPage() {
                       )}
                     </div>
 
-                    <div className="dropdown">
+                    <div className="dropdown" data-menu-id={webinar.id}>
                       <button
+                        type="button"
                         className="btn btn-ghost btn-icon btn-xs"
                         onClick={() => setOpenMenu(openMenu === webinar.id ? null : webinar.id)}
+                        aria-label={t('webinar.actionsMenu', { title: webinar.title })}
+                        aria-haspopup="menu"
+                        aria-expanded={openMenu === webinar.id}
                       >
                         <MoreVertical size={16} />
                       </button>
@@ -310,6 +349,19 @@ export default function WebinarsListPage() {
           onClose={() => setDeleteTarget(null)}
           onDeleted={handleDeleted}
         />
+      )}
+
+      {toast && (
+        <div className="toast-container">
+          <div
+            className={`toast toast--${toast.type}`}
+            role={toast.type === 'error' ? 'alert' : 'status'}
+            aria-live="polite"
+          >
+            {toast.type === 'error' ? <AlertCircle size={18} aria-hidden="true" /> : <Check size={18} aria-hidden="true" />}
+            <span>{toast.text}</span>
+          </div>
+        </div>
       )}
     </div>
   );

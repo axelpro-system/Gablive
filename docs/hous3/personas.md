@@ -5,7 +5,7 @@ Fontes: `PRODUCT.md`, `brand-identity/modules/20_positioning.md`, `brand-identit
 
 **Anti-persona (não cadastrar como persona):** iniciante no primeiro webinário, sem roteiro validado e sem mídia recorrente. Não sente a dor de timestamp/conversão; puxa o produto para “simplicidade” e infla escopo.
 
-Hierarquia resumida: **Administrador da organização** origina a conta → **Operador** executa o funil → **Lead** consome a inscrição/sala → o Administrador consome isolamento e papéis.
+Hierarquia resumida: **Equipe da plataforma** habilita a org e acompanha o valor entregue → **Administrador da organização** origina a conta → **Operador** executa o funil → **Lead** consome a inscrição/sala → o Administrador consome isolamento e papéis.
 
 ---
 
@@ -33,7 +33,7 @@ Campos de apoio
 O que NÃO faz: não processa pagamento (Hotmart/Selflux); não é o lead na sala; em org com admin separado, não gerencia convite de usuários nem auditoria da plataforma.
 Papéis acumulados: com frequência acumula gestor de tráfego (lê UTM e analytics). O sistema não precisa de login separado — precisa de métricas no painel do operador.
 Hierarquia / relação com outras personas: Administrador da org origina a conta → Operador executa webinário e interações → Lead se inscreve e assiste → Operador consome leads/analytics.
-Features/RFs relacionadas: exclusão em massa Chat/Oferta/Vendas (`docs/hous3/exclusao-em-massa-interacoes.md`); JIT sessão/recorrência/duração; esconder oferta; resultados de enquete; replay no relógio da sessão; prova social real; agenda da sessão (`docs/hous3/funil-publico-complementar.md`).
+Features/RFs relacionadas: exclusão em massa Chat/Oferta/Vendas (`docs/hous3/exclusao-em-massa-interacoes.md`); JIT sessão/recorrência/duração; esconder oferta; resultados de enquete; replay no relógio da sessão; prova social real; agenda da sessão (`docs/hous3/funil-publico-complementar.md`). UX Onda 1 (`docs/hous3/ux-onda-1.md`): UX1-01 a UX1-12, UX1-15 e UX1-16.
 Fontes: `PRODUCT.md` (primary persona); módulo 20 (categoria webinar-funil vs Zoom); módulo 30 (ICP, citação do segundo do vídeo); auditoria de tela vs processo no Gablive.
 Pendências: [PENDENTE] Qual volume médio de webinários simultâneos por operador nesta base (hoje o número forte é 2–3 JIT/semana no cliente-tipo, não na amostra real de tenants)?
 
@@ -62,7 +62,7 @@ Assistir o replay no YouTube aberto, fora da sala — resolve o vídeo; quebra o
 Campos de apoio
 O que NÃO faz: não configura webinário, não vê leads de outros, não aprova capacidade.
 Hierarquia / relação com outras personas: Operador publica o link → Lead se inscreve e assiste → Operador consome o comportamento (assistência, CTA, voto).
-Features/RFs relacionadas: registro + recover; fila de espera sem acesso à sala; JIT espera/sessão/duração; replay a partir da sessão; prova social real; agenda da sessão; audiência na espera.
+Features/RFs relacionadas: registro + recover; fila de espera sem acesso à sala; JIT espera/sessão/duração; replay a partir da sessão; prova social real; agenda da sessão; audiência na espera. UX Onda 1: UX1-04 (preço em BRL na sala), UX1-13 (texto da IA legível) e UX1-14 (erro de inscrição visível no celular).
 Fontes: `Claude.md` (register_participant, recover só reenvia e-mail); funil `/register` `/wait` `/room` `/replay`; auditoria de waitlist e JIT.
 Pendências: [PENDENTE] Qual taxa real de recover (“já sou inscrito, manda o link”) por webinário nesta base?
 
@@ -90,14 +90,41 @@ Campos de apoio
 O que NÃO faz: não é o Lead; em time grande, não monta cada interação (isso é o Operador). Não é admin da plataforma Gablive (`/admin` de gateway).
 Papéis acumulados: no mentor solo, Administrador = Operador. O sistema distingue `admin` vs `presenter`; a mesma pessoa física pode ter admin.
 Hierarquia / relação com outras personas: Administrador origina org e convites → Operador executa webinários → Lead consome o funil público → Administrador consome isolamento, usuários e (quando há) auditoria.
-Features/RFs relacionadas: multi-tenant/RLS; Users/convite; Audit; Integrations Hotmart/Selflux; templates de página da org; Settings da org.
+Features/RFs relacionadas: multi-tenant/RLS; Users/convite; Audit; Integrations Hotmart/Selflux; templates de página da org; Settings da org. `docs/hous3/valor-saude-planos.md` (assentos e "Meu plano"; no PRD: FR9–FR11 e FR13). UX Onda 1: UX1-11 (modal de convite).
 Fontes: módulo 20 (multi-tenant, 15 webinários / 15 clientes); `PRODUCT.md` (secondary audience); `Claude.md` (gablive-rls-tenant, gablive-sales-integrations).
 Pendências: [PENDENTE] Nesta base, quantas orgs são solo (admin=operador) vs agência com 2+ operadores?
 
 ---
 
+Persona: Equipe da plataforma (platform admin)
+Analogia: é o síndico do prédio: não mora em nenhum apartamento (org), mas precisa saber quais estão vazios, quais atrasaram o condomínio e quem pode entrar.
+
+Quem opera na prática: o time que opera o Gablive como negócio (fundadores/operação da AxelPro). No banco: linha em `platform_admins`, com acesso à rota `/admin` (`AdminGatewayPage`). Não é o `admin` de uma org.
+
+Contexto
+Enxerga todas as orgs ao mesmo tempo, por cima do isolamento por `org_id` (RLS com bypass só para `platform_admins`). Hoje o console tem quatro abas: Organizações, Usuários, Webinários e Registros, com ações de suspender e ativar org. Ciclo esperado: acompanhar quem está usando → agir antes de a org parar → ativar plano quando o cliente paga. Não existe cobrança no produto: plano, MRR, churn e clientes pagantes estão como `[A PREENCHER]` em `investor-materials/facts.md`. Não opera webinário de cliente nem vê o funil pelo lado do lead. [PENDENTE] Quantas pessoas compõem essa equipe e com que frequência abrem o `/admin`?
+
+Frustração
+Descobre que uma org parou de usar só quando ela some. Não há sinal de "última inscrição há 21 dias", então o churn chega sem aviso. [PENDENTE] Confirmar com a equipe que isso já aconteceu e com qual cliente.
+Não consegue responder a um investidor ou sócio "quanto o Gablive fatura e quantos clientes pagam", porque nenhum desses números sai do produto. Custo: todo material de captação fica travado em `[A PREENCHER]`.
+Não sabe quanto cada cliente vende pelo Gablive, embora `purchases` já receba as vendas da Hotmart e da SellFlux. Sem esse número, não tem argumento de ROI para renovar nem para cobrar mais.
+
+Soluções atuais
+Aba Organizações/Registros do `/admin` — resolve "quem existe e quantos inscritos tem"; quebra por não comparar períodos nem juntar vendas; custa abrir org por org.
+Consulta SQL direto no Supabase — resolve qualquer pergunta pontual; quebra por exigir alguém técnico e não deixar histórico; custa tempo de desenvolvedor. [PENDENTE] Confirmar que é assim que a equipe faz hoje.
+`investor-materials/facts.md` preenchido à mão — resolve ter um lugar único para os números; quebra por não ter fonte automática; custa números desatualizados ou vazios.
+
+Campos de apoio
+O que NÃO faz: não edita webinário, interação ou lead de nenhuma org; não é o Administrador da organização; não vê a nota de saúde pelo lado do cliente (decisão do PRD: só a equipe vê).
+Hierarquia / relação com outras personas: Equipe da plataforma habilita a org → Administrador da org origina conta e convites → Operador executa → Lead consome → Equipe da plataforma consome métricas de valor e decide plano.
+Features/RFs relacionadas: `docs/hous3/valor-saude-planos.md` (valor e risco por org; planos por org). No PRD: `docs/prd.md` FR1–FR4 (métricas de valor e nota de saúde) e FR5–FR13 (planos por assento; o FR12 é a gestão de planos pela equipe).
+Fontes: `supabase/migrations/004_platform_admins.sql`; `src/pages/dashboard/AdminGatewayPage.jsx`; `investor-materials/facts.md`; `docs/prd.md`; `docs/brainstorms/2026-09-24-retencao-expansao.md`. Nenhuma frase veio de call: esta persona foi derivada do código e precisa ser validada com a equipe.
+Pendências: [PENDENTE] As três frustrações acima são reais para a equipe hoje, ou só hipóteses do brainstorming? [PENDENTE] Quem decide o plano de um cliente: a equipe ou o comercial?
+
+---
+
 Checklist antes de usar no Track
-Há pelo menos uma persona por feature do roadmap atual (Operador e Lead cobrem o funil; Administrador cobre tenant).
+Há pelo menos uma persona por feature do roadmap atual (Operador e Lead cobrem o funil; Administrador cobre tenant; Equipe da plataforma cobre métricas de valor, nota de saúde e planos).
 Nenhum nome é “usuário” / “cliente” genérico.
 Contexto tem número (faturamento, 2–3 JIT/semana, 15×15 no discurso de agência).
 Frustração não é “falta de sistema”.
