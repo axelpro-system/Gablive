@@ -844,6 +844,86 @@ p {
   animation: slideInRight var(--transition-slow) ease;
 }
 
+.toast--success { border-color: var(--color-success-100); color: var(--color-success-700); }
+.toast--error { border-color: var(--color-error-100); color: var(--color-error-700); }
+
+@media (max-width: 480px) {
+  .toast-container { left: var(--space-4); right: var(--space-4); bottom: var(--space-4); }
+  .toast { min-width: 0; max-width: none; }
+}
+
+/* --- Component: Inline alert (feedback de ações) --- */
+.inline-alert {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  animation: slideDown var(--transition-base) ease;
+}
+
+.inline-alert svg { flex-shrink: 0; }
+.inline-alert-text { flex: 1; min-width: 0; }
+
+.inline-alert--success {
+  background-color: var(--color-success-50);
+  color: var(--color-success-700);
+  border: 1px solid var(--color-success-100);
+}
+
+.inline-alert--error {
+  background-color: var(--color-error-50);
+  color: var(--color-error-700);
+  border: 1px solid var(--color-error-100);
+}
+
+.inline-alert-dismiss {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-1);
+  border: none;
+  background: none;
+  color: inherit;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  opacity: 0.7;
+}
+
+.inline-alert-dismiss:hover,
+.inline-alert-dismiss:focus-visible { opacity: 1; }
+
+/* --- Component: Confirm dialog --- */
+.confirm-dialog { max-width: 440px; }
+
+.confirm-dialog-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.confirm-dialog-icon { color: var(--color-error-600); }
+
+.confirm-dialog-message { color: var(--color-gray-600); }
+
+/* Erro do controle de status flutua abaixo do botão para não deslocar o cabeçalho. */
+.webinar-status-control {
+  position: relative;
+  display: inline-flex;
+}
+
+.webinar-status-control .inline-alert {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  right: 0;
+  width: max-content;
+  max-width: 320px;
+  z-index: var(--z-dropdown);
+  box-shadow: var(--shadow-lg);
+}
+
 /* --- Component: Dropdown --- */
 .dropdown {
   position: relative;

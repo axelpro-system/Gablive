@@ -1108,6 +1108,11 @@
   font-weight: 700;
 }
 
+/* Texto escuro sobre o fundo claro do balão da IA (o padrão do chat é texto claro). */
+.ai-message .room-chat-text {
+  color: var(--color-gray-900);
+}
+
 .room-chat-typing-dots {
   display: inline-flex;
   gap: 4px;

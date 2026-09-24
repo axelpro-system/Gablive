@@ -5,6 +5,7 @@ import Papa from 'papaparse';
 import { AUDIENCE_MODE } from '../../lib/constants';
 import { buildBulkDeleteConfirmMessage, chunkIds, filterOutIds } from '../../lib/bulkSelection';
 import { tallyPollVotes } from '../../lib/pollResults';
+import { formatCurrency } from '../../lib/format';
 import useBulkSelection from '../../hooks/useBulkSelection';
 import TimeInput from './TimeInput';
 import BulkSelectBar from './BulkSelectBar';
@@ -563,9 +564,9 @@ export default function InteractionsEditor({ webinarId }) {
                       </span>
                       <div className="timeline-content flex-col">
                         <strong>{cta.title}</strong>
-                        {cta.sale_price != null && (
+                        {formatCurrency(cta.sale_price) && (
                           <span className="text-xs text-gray-500">
-                            {cta.original_price != null && <s>R$ {Number(cta.original_price).toFixed(2)}</s>} R$ {Number(cta.sale_price).toFixed(2)}
+                            {formatCurrency(cta.original_price) && <s>{formatCurrency(cta.original_price)}</s>} {formatCurrency(cta.sale_price)}
                           </span>
                         )}
                         <a href={cta.button_url} target="_blank" rel="noreferrer" className="text-xs text-primary-600">{cta.button_text}</a>

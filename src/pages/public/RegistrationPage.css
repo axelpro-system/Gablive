@@ -159,6 +159,19 @@
   backdrop-filter: blur(14px);
 }
 
+/* Erro do formulário: próprio da página (não depende do CSS das telas de login). */
+.reg-form-error {
+  margin-bottom: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  background: color-mix(in srgb, var(--color-error-600) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-error-500) 55%, transparent);
+  border-radius: var(--radius-md);
+  color: var(--color-error-100);
+  font-size: var(--text-sm);
+  line-height: 1.45;
+  scroll-margin: var(--space-6);
+}
+
 .reg-form-title {
   margin: 8px 0 24px;
   color: #f4f4f5;

@@ -47,7 +47,7 @@ export default function DeleteWebinarDialog({ webinar, orgId, userId, onClose, o
   };
 
   return (
-    <div className="modal-backdrop" onClick={deleting ? undefined : onClose}>
+    <div className="modal-overlay" onClick={deleting ? undefined : onClose}>
       <div
         className="modal"
         onClick={(e) => e.stopPropagation()}

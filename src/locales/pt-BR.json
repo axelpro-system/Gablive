@@ -44,7 +44,9 @@
     "archive": "Arquivar",
     "copiedToClipboard": "Copiado para a área de transferência",
     "error": "Erro",
-    "success": "Sucesso"
+    "success": "Sucesso",
+    "saved": "Alterações salvas.",
+    "saveError": "Não foi possível salvar. Tente novamente."
   },
   "auth": {
     "login": "Entrar",
@@ -147,7 +149,12 @@
     "deleteError": "Não foi possível excluir o webinário. Tente novamente.",
     "statusChangeError": "Não foi possível alterar o status do webinário. Tente novamente.",
     "attendees": "Participantes",
-    "registrations": "Registros"
+    "registrations": "Registros",
+    "endLiveConfirmTitle": "Encerrar a transmissão ao vivo?",
+    "endLiveConfirmMessage": "A sala será encerrada para todos os participantes que estão assistindo agora.",
+    "linkCopied": "Link de inscrição copiado",
+    "copyLinkError": "Não foi possível copiar o link. Copie pela página do webinário.",
+    "actionsMenu": "Ações do webinário {{title}}"
   },
   "pageEditor": {
     "title": "Editor de página",

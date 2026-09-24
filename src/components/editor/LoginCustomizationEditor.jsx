@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { LogIn, Save } from 'lucide-react';
+import { LogIn, Save, RotateCcw } from 'lucide-react';
+import InlineAlert from '../ui/InlineAlert';
 
 const DEFAULTS = {
   logo_url: '',
@@ -19,29 +20,47 @@ export default function LoginCustomizationEditor({ webinarId }) {
   const [config, setConfig] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [feedback, setFeedback] = useState(null);
+  const [loadError, setLoadError] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     const fetchConfig = async () => {
-      const { data } = await supabase
+      setLoading(true);
+      setLoadError(false);
+
+      const { data, error } = await supabase
         .from('login_customizations')
         .select('*')
         .eq('webinar_id', webinarId)
         .maybeSingle();
 
+      if (error) {
+        console.error('Erro ao carregar a Tela de Entrada:', error);
+        setLoadError(true);
+        setLoading(false);
+        return;
+      }
+
       if (data) {
         setConfig(data);
       } else {
-        const { data: created } = await supabase
+        const { data: created, error: createError } = await supabase
           .from('login_customizations')
           .insert({ webinar_id: webinarId, ...DEFAULTS })
           .select()
           .single();
-        setConfig(created);
+        if (createError || !created) {
+          console.error('Erro ao criar a Tela de Entrada:', createError);
+          setLoadError(true);
+        } else {
+          setConfig(created);
+        }
       }
       setLoading(false);
     };
     fetchConfig();
-  }, [webinarId]);
+  }, [webinarId, reloadKey]);
 
   const updateField = (field, value) => {
     setConfig((prev) => ({ ...prev, [field]: value }));
@@ -50,7 +69,8 @@ export default function LoginCustomizationEditor({ webinarId }) {
   const handleSave = async (e) => {
     e.preventDefault();
     setSaving(true);
-    await supabase
+    setFeedback(null);
+    const { error } = await supabase
       .from('login_customizations')
       .update({
         logo_url: config.logo_url,
@@ -66,9 +86,34 @@ export default function LoginCustomizationEditor({ webinarId }) {
       })
       .eq('id', config.id);
     setSaving(false);
+    if (error) {
+      console.error('Erro ao salvar a Tela de Entrada:', error);
+      setFeedback({ type: 'error', text: 'Não foi possível salvar a Tela de Entrada. Tente novamente.' });
+      return;
+    }
+    setFeedback({ type: 'success', text: 'Tela de Entrada salva.' });
   };
 
-  if (loading || !config) return <div className="spinner spinner-sm" />;
+  if (loading) return <div className="spinner spinner-sm" />;
+
+  if (loadError || !config) {
+    return (
+      <div className="card">
+        <div className="card-body">
+          <InlineAlert type="error" className="mb-3">
+            Não foi possível carregar a Tela de Entrada.
+          </InlineAlert>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={() => setReloadKey((k) => k + 1)}
+          >
+            <RotateCcw size={16} /> Tentar de novo
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="card">
@@ -181,6 +226,12 @@ export default function LoginCustomizationEditor({ webinarId }) {
               onChange={(e) => updateField('phone_placeholder', e.target.value)}
             />
           </div>
+
+          {feedback && (
+            <InlineAlert type={feedback.type} onClose={() => setFeedback(null)} className="mt-4">
+              {feedback.text}
+            </InlineAlert>
+          )}
 
           <div className="form-actions">
             <button type="submit" className="btn btn-primary" disabled={saving}>

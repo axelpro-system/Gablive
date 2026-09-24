@@ -34,6 +34,13 @@ export default function GlobalAnalyticsPage() {
     };
   }, [filteredRows]);
 
+  const kpis = [
+    { label: 'Total de Inscritos', value: globalStats.totalRegistrations, icon: Users, color: 'var(--color-primary-500)' },
+    { label: 'Total Participantes', value: globalStats.totalAttendees, icon: CheckCircle2, color: 'var(--color-success-500)' },
+    { label: 'Taxa Média de Presença', value: `${globalStats.conversionRate}%`, icon: TrendingUp, color: 'var(--color-warning-500)' },
+    { label: 'Cliques em Ofertas (CTA)', value: globalStats.ctaClicks, icon: MousePointer2, color: 'var(--color-error-500)' },
+  ];
+
   return (
     <div className="dashboard-page">
       <header className="page-header flex justify-between items-center mb-6">
@@ -75,57 +82,17 @@ export default function GlobalAnalyticsPage() {
       ) : (
         <>
           <div className="stats-grid mb-8">
-            <div className="stat-card">
-              <div
-                className="stat-icon"
-                style={{ background: 'rgba(51, 102, 255, 0.1)', color: 'var(--color-primary-600)' }}
-              >
-                <Users size={24} />
+            {kpis.map((kpi) => (
+              <div key={kpi.label} className="stat-card">
+                <div className="stat-card-icon" style={{ color: kpi.color }}>
+                  <kpi.icon size={22} aria-hidden="true" />
+                </div>
+                <div>
+                  <p className="stat-card-label">{kpi.label}</p>
+                  <p className="stat-card-value">{kpi.value}</p>
+                </div>
               </div>
-              <div className="stat-content">
-                <span className="stat-label">Total de Inscritos</span>
-                <span className="stat-value">{globalStats.totalRegistrations}</span>
-              </div>
-            </div>
-
-            <div className="stat-card">
-              <div
-                className="stat-icon"
-                style={{ background: 'rgba(34, 197, 94, 0.1)', color: 'var(--color-success-600)' }}
-              >
-                <CheckCircle2 size={24} />
-              </div>
-              <div className="stat-content">
-                <span className="stat-label">Total Participantes</span>
-                <span className="stat-value">{globalStats.totalAttendees}</span>
-              </div>
-            </div>
-
-            <div className="stat-card">
-              <div
-                className="stat-icon"
-                style={{ background: 'rgba(234, 179, 8, 0.1)', color: 'var(--color-warning-600)' }}
-              >
-                <TrendingUp size={24} />
-              </div>
-              <div className="stat-content">
-                <span className="stat-label">Taxa Média de Presença</span>
-                <span className="stat-value">{globalStats.conversionRate}%</span>
-              </div>
-            </div>
-
-            <div className="stat-card">
-              <div
-                className="stat-icon"
-                style={{ background: 'rgba(239, 68, 68, 0.1)', color: 'var(--color-error-600)' }}
-              >
-                <MousePointer2 size={24} />
-              </div>
-              <div className="stat-content">
-                <span className="stat-label">Cliques em Ofertas (CTA)</span>
-                <span className="stat-value">{globalStats.ctaClicks}</span>
-              </div>
-            </div>
+            ))}
           </div>
 
           <div className="card">
