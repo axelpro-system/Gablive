@@ -1,0 +1,64 @@
+.org-health-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.org-health-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.org-health-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-3);
+}
+
+.org-health-control {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+}
+
+.org-health-score {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.org-health-name {
+  font-weight: var(--font-medium);
+  color: var(--color-text);
+}
+
+.org-health-muted {
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+}
+
+.org-health-trend {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-variant-numeric: tabular-nums;
+}
+
+.org-health-loading {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-12, 48px) 0;
+}
+
+.org-health-over {
+  color: var(--color-error-600);
+  font-weight: var(--font-semibold);
+}

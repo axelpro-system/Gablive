@@ -3,8 +3,11 @@ import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { useOrg } from '../../contexts/OrgContext';
 import { logAudit } from '../../lib/audit';
-import { useTranslation } from 'react-i18next';
-import { Users, UserPlus, Mail, Clock, Shield, X, CheckCircle, AlertCircle, ChevronDown } from 'lucide-react';
+import { usePlan } from '../../hooks/usePlan';
+import { readFunctionErrorBody } from '../../lib/functionErrors';
+import { SEAT_LIMIT_REACHED } from '../../lib/seats';
+import InlineAlert from '../../components/ui/InlineAlert';
+import { Users, UserPlus, Mail, X, CheckCircle, AlertCircle, ChevronDown } from 'lucide-react';
 import './DashboardPage.css';
 
 const ROLE_LABELS = {
@@ -22,7 +25,6 @@ function formatDate(isoString) {
 }
 
 export default function UsersPage() {
-  const { t } = useTranslation();
   const { profile, user } = useAuth();
   const { orgId } = useOrg();
   const [members, setMembers] = useState([]);
@@ -32,6 +34,8 @@ export default function UsersPage() {
   const [toast, setToast] = useState(null);
   const [form, setForm] = useState({ email: '', role: 'presenter' });
   const [editingRole, setEditingRole] = useState(null); // member id being edited
+  const { summary: seats, refetch: refetchSeats } = usePlan();
+  const inviteBlocked = Boolean(seats && !seats.canInvite);
 
   const fetchMembers = useCallback(async () => {
     if (!orgId) {
@@ -69,11 +73,20 @@ export default function UsersPage() {
 
     try {
       // Call the Edge Function via supabase.functions.invoke
-      const { data, error } = await supabase.functions.invoke('invite-administrator', {
+      const { error } = await supabase.functions.invoke('invite-administrator', {
         body: { email: form.email, role: form.role, orgId },
       });
 
-      if (error) throw new Error(error.message || 'Erro ao convidar');
+      if (error) {
+        const body = await readFunctionErrorBody(error);
+        if (body?.error === SEAT_LIMIT_REACHED) {
+          refetchSeats();
+          throw new Error(
+            `Seu plano permite ${body.limit} assento(s) e todos estão em uso. Fale com a equipe Gablive para ampliar o plano.`
+          );
+        }
+        throw new Error(body?.error || error.message || 'Erro ao convidar');
+      }
 
       // Audit log from client side as well
       logAudit({
@@ -88,6 +101,7 @@ export default function UsersPage() {
       setShowModal(false);
       setForm({ email: '', role: 'presenter' });
       fetchMembers();
+      refetchSeats();
     } catch (err) {
       setToast({ type: 'error', message: err.message });
     } finally {
@@ -136,6 +150,7 @@ export default function UsersPage() {
         description: `Acesso do usuário revogado`,
       });
       fetchMembers();
+      refetchSeats();
     }
   };
 
@@ -149,11 +164,35 @@ export default function UsersPage() {
           </h1>
           <p className="page-subtitle">Gerencie os membros da sua organização</p>
         </div>
-        <button className="btn btn-create" onClick={() => setShowModal(true)}>
-          <UserPlus size={16} />
-          Convidar usuário
-        </button>
+        <div className="users-header-actions">
+          {seats && (
+            <span className={`badge ${inviteBlocked ? 'badge-error' : 'badge-gray'}`}>
+              {seats.unlimited
+                ? `${seats.used} assento(s) · sem limite`
+                : `${seats.used} de ${seats.limit} assentos`}
+            </span>
+          )}
+          <button
+            className="btn btn-create"
+            onClick={() => setShowModal(true)}
+            disabled={inviteBlocked}
+            aria-describedby={inviteBlocked ? 'seat-limit-notice' : undefined}
+          >
+            <UserPlus size={16} />
+            Convidar usuário
+          </button>
+        </div>
       </div>
+
+      {inviteBlocked && (
+        <div id="seat-limit-notice">
+          <InlineAlert type="error" className="mb-4">
+            {seats.overLimit
+              ? `Sua organização usa ${seats.used} assentos e o plano ${seats.planName ?? ''} permite ${seats.limit}. Ninguém foi removido, mas novos convites estão bloqueados. Fale com a equipe Gablive para ampliar o plano.`
+              : `Você usa todos os ${seats.limit} assentos do plano ${seats.planName ?? ''}. Para convidar mais pessoas, fale com a equipe Gablive e amplie o plano.`}
+          </InlineAlert>
+        </div>
+      )}
 
       {/* Toast */}
       {toast && (

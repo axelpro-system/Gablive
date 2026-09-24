@@ -41,6 +41,7 @@ export default function RegisterPage() {
         setConfirmationSent(true);
       }
     } catch (err) {
+      console.error('Erro ao cadastrar:', err);
       setError(t('auth.registerError'));
     } finally {
       setLoading(false);

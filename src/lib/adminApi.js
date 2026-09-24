@@ -93,4 +93,12 @@ export const adminApi = {
   removeAdmin(id) {
     return adminFetch(`/admins/${id}`, { method: 'DELETE' })
   },
+
+  // Plans & subscriptions
+  listPlans() {
+    return adminFetch('/subscriptions/plans')
+  },
+  updateSubscription(orgId, body) {
+    return adminFetch(`/subscriptions/${orgId}`, { method: 'PATCH', body: JSON.stringify(body) })
+  },
 }

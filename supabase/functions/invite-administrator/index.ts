@@ -86,6 +86,28 @@ serve(async (req) => {
       )
     }
 
+    // Seat limit (plan). The rule lives in the DB (org_seat_status). If the check itself
+    // fails or the org has no subscription yet, invites keep working as before and we log it.
+    const { data: seatStatus, error: seatError } = await supabaseAdmin
+      .rpc("org_seat_status", { p_org_id: orgId })
+
+    if (seatError) {
+      console.error("Seat check failed (invite allowed):", seatError)
+    } else if (seatStatus && !seatStatus.has_subscription) {
+      console.warn(`Org ${orgId} has no subscription; treating seats as unlimited`)
+    } else if (seatStatus && seatStatus.can_invite === false) {
+      console.info(`seat_limit_reached org=${orgId} used=${seatStatus.used} limit=${seatStatus.limit}`)
+      return new Response(
+        JSON.stringify({
+          error: "seat_limit_reached",
+          code: "seat_limit_reached",
+          used: seatStatus.used,
+          limit: seatStatus.limit,
+        }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      )
+    }
+
     // Send invite via Supabase Auth admin (magic link)
     const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
       redirectTo: `${req.headers.get("origin") ?? "http://localhost:3000"}/dashboard`,

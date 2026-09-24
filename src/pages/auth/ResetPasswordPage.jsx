@@ -56,6 +56,7 @@ export default function ResetPasswordPage() {
       // Fire-and-forget: uma falha aqui não invalida a troca de senha.
       supabase.auth.signOut().catch(() => {});
     } catch (err) {
+      console.error('Erro ao atualizar senha:', err);
       setError(t('auth.updatePasswordError'));
     } finally {
       setLoading(false);

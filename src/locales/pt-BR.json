@@ -300,7 +300,67 @@
     "totalUsers": "Total de usuários",
     "activeWebinars": "Webinários ativos",
     "overview": "Visão Geral",
-    "emptyTable": "Nenhum registro encontrado"
+    "emptyTable": "Nenhum registro encontrado",
+    "health": {
+      "period": "Período",
+      "lastDays_one": "Último {{count}} dia",
+      "lastDays_other": "Últimos {{count}} dias",
+      "filter": "Classificação",
+      "all": "Todas",
+      "refresh": "Atualizar",
+      "loadError": "Não foi possível carregar a saúde das organizações. Tente atualizar.",
+      "empty": "Nenhuma organização cadastrada.",
+      "emptyFilter": "Nenhuma organização nesta classificação.",
+      "incomplete": "Dados incompletos",
+      "never": "Nunca",
+      "daysAgo_one": "há {{count}} dia",
+      "daysAgo_other": "há {{count}} dias",
+      "class": {
+        "healthy": "Saudável",
+        "attention": "Atenção",
+        "risk": "Risco",
+        "new": "Nova",
+        "unknown": "Sem dados"
+      },
+      "col": {
+        "org": "Organização",
+        "score": "Nota",
+        "lastRegistration": "Última inscrição",
+        "registrations": "Inscrições (atual / anterior)",
+        "attendance": "Presença",
+        "ctaClicks": "Cliques em oferta",
+        "sales": "Vendas",
+        "revenue": "Receita atribuída",
+        "plan": "Plano e assentos"
+      }
+    },
+    "plan": {
+      "manage": "Gerenciar plano",
+      "manageFor": "Gerenciar plano de {{org}}",
+      "title": "Plano de {{org}}",
+      "plan": "Plano",
+      "planHint": "Planos marcados como fora de venda só aparecem para quem já está neles.",
+      "status": "Situação da assinatura",
+      "trialEndsAt": "Fim do período de teste",
+      "notes": "Observações internas",
+      "notesHint": "Visível apenas para a equipe da plataforma.",
+      "saveError": "Não foi possível salvar o plano. Tente novamente.",
+      "plansError": "Não foi possível carregar o catálogo de planos.",
+      "noSubscription": "Esta organização ainda não tem assinatura. Aplique a migration de planos antes de editar.",
+      "noPlan": "Sem plano",
+      "unlimited": "sem limite",
+      "notForSale": "fora de venda",
+      "seats_one": "{{count}} assento",
+      "seats_other": "{{count}} assentos",
+      "seatsOf": "{{used}} de {{limit}} assentos",
+      "seatsUnlimited": "{{used}} assentos · sem limite",
+      "statusLabel": {
+        "trial": "Em teste",
+        "active": "Ativo",
+        "past_due": "Pagamento pendente",
+        "canceled": "Cancelado"
+      }
+    }
   },
   "users": {
     "title": "Usuários",

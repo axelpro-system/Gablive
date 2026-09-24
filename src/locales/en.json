@@ -300,7 +300,67 @@
     "totalUsers": "Total users",
     "activeWebinars": "Active webinars",
     "overview": "Overview",
-    "emptyTable": "No records found"
+    "emptyTable": "No records found",
+    "health": {
+      "period": "Period",
+      "lastDays_one": "Last {{count}} day",
+      "lastDays_other": "Last {{count}} days",
+      "filter": "Classification",
+      "all": "All",
+      "refresh": "Refresh",
+      "loadError": "Could not load organization health. Try refreshing.",
+      "empty": "No organizations yet.",
+      "emptyFilter": "No organizations in this classification.",
+      "incomplete": "Incomplete data",
+      "never": "Never",
+      "daysAgo_one": "{{count}} day ago",
+      "daysAgo_other": "{{count}} days ago",
+      "class": {
+        "healthy": "Healthy",
+        "attention": "Attention",
+        "risk": "At risk",
+        "new": "New",
+        "unknown": "No data"
+      },
+      "col": {
+        "org": "Organization",
+        "score": "Score",
+        "lastRegistration": "Last registration",
+        "registrations": "Registrations (current / previous)",
+        "attendance": "Attendance",
+        "ctaClicks": "Offer clicks",
+        "sales": "Sales",
+        "revenue": "Attributed revenue",
+        "plan": "Plan and seats"
+      }
+    },
+    "plan": {
+      "manage": "Manage plan",
+      "manageFor": "Manage plan for {{org}}",
+      "title": "Plan for {{org}}",
+      "plan": "Plan",
+      "planHint": "Plans marked as not for sale only apply to accounts already on them.",
+      "status": "Subscription status",
+      "trialEndsAt": "Trial end",
+      "notes": "Internal notes",
+      "notesHint": "Visible to the platform team only.",
+      "saveError": "Could not save the plan. Please try again.",
+      "plansError": "Could not load the plan catalog.",
+      "noSubscription": "This organization has no subscription yet. Apply the plans migration before editing.",
+      "noPlan": "No plan",
+      "unlimited": "unlimited",
+      "notForSale": "not for sale",
+      "seats_one": "{{count}} seat",
+      "seats_other": "{{count}} seats",
+      "seatsOf": "{{used}} of {{limit}} seats",
+      "seatsUnlimited": "{{used}} seats · unlimited",
+      "statusLabel": {
+        "trial": "Trial",
+        "active": "Active",
+        "past_due": "Payment pending",
+        "canceled": "Canceled"
+      }
+    }
   },
   "users": {
     "title": "Users",

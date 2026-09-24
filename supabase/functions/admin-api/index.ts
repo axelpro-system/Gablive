@@ -34,6 +34,11 @@ function paginated(data: unknown[], total: number, page: number, perPage: number
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 
+/** Escapes LIKE wildcards so `ilike` behaves as a case-insensitive equality. */
+function escapeLikePattern(value: string) {
+  return value.replace(/[\\%_]/g, (c) => "\\" + c)
+}
+
 async function getAdminUser(authHeader: string) {
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!
   const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
@@ -52,14 +57,20 @@ async function getAdminUser(authHeader: string) {
     return null
   }
 
-  // Check if user is a platform admin
+  // Check if user is a platform admin. The real platform_admins schema identifies admins
+  // by e-mail (columns: id, email, name, is_active, ...; there is no user_id column).
+  if (!user.email || !user.email_confirmed_at) return null
+
   const { data: admin } = await svcClient
     .from("platform_admins")
-    .select("id, display_name, email")
-    .eq("user_id", user.id)
-    .single()
+    .select("id, name, email, is_active")
+    .ilike("email", escapeLikePattern(user.email)) // exact, case-insensitive
+    .maybeSingle()
 
-  return admin ?? null
+  if (!admin || admin.is_active === false) return null
+
+  // `id` is the auth user id: audit_logs.user_id references auth.users.
+  return { id: user.id, platformAdminId: admin.id, name: admin.name, email: admin.email }
 }
 
 // ─── Audit Logger ─────────────────────────────────────────────────────────────
@@ -77,7 +88,7 @@ async function logAudit(
     isPlatform?: boolean
   }
 ) {
-  await svcClient.from("audit_logs").insert({
+  const { error: auditError } = await svcClient.from("audit_logs").insert({
     org_id: params.orgId ?? "00000000-0000-0000-0000-000000000000",
     user_id: params.userId,
     action: params.action,
@@ -87,6 +98,92 @@ async function logAudit(
     metadata: params.metadata ?? {},
     is_platform_action: params.isPlatform ?? false,
   })
+
+  if (auditError) {
+    console.error("audit_logs insert failed:", auditError, params.action)
+  }
+}
+
+// ─── Subscriptions (plans) ────────────────────────────────────────────────────
+
+const SUBSCRIPTION_STATUSES = ["trial", "active", "past_due", "canceled"]
+
+// GET /subscriptions/plans            -> catálogo de planos
+// PATCH /subscriptions/:orgId         -> { plan_id?, status?, trial_ends_at?, internal_notes? }
+async function handleSubscriptions(
+  svcClient: ReturnType<typeof createClient>,
+  method: string,
+  pathParts: string[],
+  body: Record<string, unknown> | null,
+  adminUser: { id: string; email: string }
+) {
+  if (method === "GET" && pathParts[1] === "plans") {
+    const { data, error: err } = await svcClient
+      .from("plans")
+      .select("id, code, name, seat_limit, reference_price_monthly, is_active")
+      .order("seat_limit", { ascending: true, nullsFirst: false })
+    if (err) return error(err.message, 400)
+    return json({ success: true, data })
+  }
+
+  if (method === "PATCH" && pathParts.length === 2) {
+    const orgId = pathParts[1]
+    const updates: Record<string, unknown> = {}
+
+    if (body && "plan_id" in body) {
+      const { data: plan } = await svcClient.from("plans").select("id").eq("id", body.plan_id).maybeSingle()
+      if (!plan) return error("Unknown plan", 400)
+      updates.plan_id = body.plan_id
+    }
+    if (body && "status" in body) {
+      if (!SUBSCRIPTION_STATUSES.includes(String(body.status))) return error("Invalid status", 400)
+      updates.status = body.status
+    }
+    if (body && "trial_ends_at" in body) {
+      const value = body.trial_ends_at
+      if (value !== null && Number.isNaN(new Date(String(value)).getTime())) {
+        return error("Invalid trial_ends_at", 400)
+      }
+      updates.trial_ends_at = value
+    }
+    if (body && "internal_notes" in body) {
+      updates.internal_notes = body.internal_notes === null ? null : String(body.internal_notes).slice(0, 2000)
+    }
+
+    if (Object.keys(updates).length === 0) return error("Nothing to update", 400)
+
+    const { data: before } = await svcClient
+      .from("org_subscriptions")
+      .select("plan_id, status, trial_ends_at, internal_notes")
+      .eq("org_id", orgId)
+      .maybeSingle()
+
+    if (!before) return error("Subscription not found for organization", 404)
+
+    const { data, error: err } = await svcClient
+      .from("org_subscriptions")
+      .update({ ...updates, updated_at: new Date().toISOString() })
+      .eq("org_id", orgId)
+      .select("plan_id, status, trial_ends_at, internal_notes")
+      .single()
+
+    if (err) return error(err.message, 400)
+
+    await logAudit(svcClient, {
+      orgId,
+      userId: adminUser.id,
+      action: "UPDATE_SUBSCRIPTION",
+      entityType: "subscription",
+      entityId: orgId,
+      description: "Updated organization plan/subscription",
+      metadata: { before, after: data },
+      isPlatform: true,
+    })
+
+    return json({ success: true, data })
+  }
+
+  return error("Method not allowed", 405)
 }
 
 // ─── Entity Routes ─────────────────────────────────────────────────────────────
@@ -482,7 +579,7 @@ async function handleAdmins(
   pathParts: string[],
   query: URLSearchParams,
   body: Record<string, unknown> | null,
-  adminUser: { id: string }
+  adminUser: { id: string; email: string }
 ) {
   if (method === "GET" && pathParts.length === 1) {
     const { data, error: err } = await svcClient
@@ -494,17 +591,16 @@ async function handleAdmins(
   }
 
   if (method === "POST" && pathParts.length === 1) {
-    const userId = body?.user_id as string | undefined
-    const displayName = body?.display_name as string | undefined
-    const email = body?.email as string | undefined
+    const name = (body?.name ?? body?.display_name) as string | undefined
+    const email = (body?.email as string | undefined)?.trim().toLowerCase()
 
-    if (!userId || !displayName || !email) {
-      return error("Missing required fields: user_id, display_name, email", 400)
+    if (!name || !email) {
+      return error("Missing required fields: name, email", 400)
     }
 
     const { data, error: err } = await svcClient
       .from("platform_admins")
-      .insert({ user_id: userId, display_name: displayName, email })
+      .insert({ name, email, is_active: true })
       .select()
       .single()
 
@@ -526,13 +622,13 @@ async function handleAdmins(
     const adminId = pathParts[1]
 
     // Prevent removing yourself
-    const { data: self } = await svcClient
+    const { data: target } = await svcClient
       .from("platform_admins")
-      .select("user_id")
+      .select("email")
       .eq("id", adminId)
-      .single()
+      .maybeSingle()
 
-    if (self?.user_id === adminUser.id) {
+    if (target?.email && target.email.toLowerCase() === adminUser.email.toLowerCase()) {
       return error("Cannot remove yourself as platform admin", 400)
     }
 
@@ -592,6 +688,8 @@ async function handleRequest(req: Request, adminUser: { id: string; email: strin
       return handleSystem(svcClient, adminUser)
     case "admins":
       return handleAdmins(svcClient, req.method, pathParts, query, body, adminUser)
+    case "subscriptions":
+      return handleSubscriptions(svcClient, req.method, pathParts, body, adminUser)
     default:
       return error(`Unknown entity: ${entity}`, 404)
   }
